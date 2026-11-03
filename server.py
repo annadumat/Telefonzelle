@@ -2,7 +2,7 @@
 """
 Telefonzelle – lokaler Server für den "Anruf in die Zukunft".
 
-- liefert die Website aus (Ordner ./public) und die Videos (Ordner ./videos)
+- liefert die Website aus (Ordner ./public, Videos in ./public/videos)
 - nimmt Aufnahmen per POST /api/upload entgegen und speichert sie in ./recordings
 - braucht nur Python 3 (Standardbibliothek), funktioniert komplett offline
 
@@ -29,7 +29,6 @@ from urllib.parse import urlparse
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 PUBLIC = os.path.join(ROOT, "public")
-VIDEOS = os.path.join(ROOT, "videos")
 RECORDINGS = os.path.join(ROOT, "recordings")
 CERT_DIR = os.path.join(ROOT, "cert")
 
@@ -55,10 +54,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def translate_path(self, path):
         p = urlparse(path).path
-        if p.startswith("/videos/"):
-            base, rel = VIDEOS, p[len("/videos/"):]
-        else:
-            base, rel = PUBLIC, p.lstrip("/")
+        base, rel = PUBLIC, p.lstrip("/")
         full = os.path.normpath(os.path.join(base, rel))
         if not full.startswith(base):
             return os.path.join(PUBLIC, "__forbidden__")
@@ -76,6 +72,11 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def do_GET(self):
+        if urlparse(self.path).path == "/api/ping":
+            return self._json(200, {"ok": True, "server": "telefonzelle"})
+        return super().do_GET()
 
     def do_POST(self):
         path = urlparse(self.path).path

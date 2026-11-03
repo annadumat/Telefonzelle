@@ -1,7 +1,6 @@
 # Telefonzelle – Anruf in die Zukunft
 
-Eine lokale Website, die einen (Video-)Anruf mit einem Avatar aus der Zukunft simuliert.
-Läuft **komplett offline** – nötig ist nur Python 3 auf einem Laptop.
+Eine Website, die einen (Video-)Anruf mit einem Avatar aus der Zukunft simuliert.
 
 ```
 [Anrufen] → Klingeln → Video 1 (Begrüßung + Frage 1) → du sprichst (Aufnahme)
@@ -9,57 +8,120 @@ Läuft **komplett offline** – nötig ist nur Python 3 auf einem Laptop.
           → Video 3 (Verabschiedung) → "Anruf beendet" → zurück zum Start
 ```
 
-Auflegen ist jederzeit möglich (roter Knopf). Eine angefangene Aufnahme wird dann als
+Auflegen geht jederzeit (roter Knopf). Eine angefangene Aufnahme wird dann als
 `…_abgebrochen` gespeichert.
 
-## Starten
+Es gibt zwei Betriebsarten, die Seite erkennt automatisch, welche gerade gilt:
 
-**A) Laptop ist selbst das Gerät** (Browser auf demselben Rechner):
+| | **Nur iPad** (empfohlen, wenig Hardware) | **Mit Laptop-Server** |
+|---|---|---|
+| Geräte | nur das iPad | iPad + Laptop (oder nur Laptop) |
+| Internet | nur einmal zum Einrichten / Aktualisieren | nie |
+| Aufnahmen liegen | auf dem iPad, Export per AirDrop / Dateien-App | direkt als Dateien auf dem Laptop |
+
+---
+
+## Variante 1: Nur iPad (offline, ohne Laptop)
+
+Die Seite wird **einmal** über eine HTTPS-Adresse geladen und als App auf den
+Home-Bildschirm gelegt. Danach sind Seite und Videos auf dem iPad gespeichert und alles
+läuft ohne Internet. Die Aufnahmen bleiben auf dem iPad, bis du sie exportierst.
+
+### Einrichten (einmalig, mit Internet)
+
+1. **Seite veröffentlichen.** Zwei Möglichkeiten:
+   - **GitHub Pages:** Im Repo unter *Settings → Pages → Source* „GitHub Actions“ wählen.
+     Bei jedem Push auf `main` wird der Ordner `public/` automatisch veröffentlicht
+     (Workflow `.github/workflows/pages.yml`). Für private Repos braucht GitHub Pages
+     einen bezahlten Plan.
+   - **Netlify Drop:** https://app.netlify.com/drop öffnen und den Ordner `public/`
+     hineinziehen (kostenloses Konto anlegen, sonst wird die Seite nach kurzer Zeit wieder
+     gelöscht).
+
+   ⚠️ Die Videos sind dann für jeden mit dem Link abrufbar (die Aufnahmen **nicht**, die
+   verlassen das iPad nie).
+2. Auf dem iPad die Adresse in **Safari** öffnen → Teilen → **„Zum Home-Bildschirm“**.
+3. Die App vom Home-Bildschirm starten (nicht in Safari, die beiden haben getrennte
+   Speicher!) und einmal einen Testanruf machen → Mikrofon erlauben.
+4. Export-Seite öffnen (siehe unten) und prüfen: **„offline bereit: ja“**.
+5. Ab jetzt kann das WLAN aus sein.
+
+### Aufnahmen exportieren
+
+- Auf dem Startbildschirm **5× schnell auf die Uhrzeit oben tippen** → Export-Seite
+  (PIN: `2075`, änderbar in `config.json` → `adminPin`).
+- **„Neue exportieren“** → **„Teilen / AirDrop / In Dateien sichern“**. Du bekommst eine
+  ZIP-Datei mit einem Ordner pro Anruf (Aufnahmen + `anruf.json`).
+- Danach sind die Aufnahmen als *exportiert* markiert. **„Exportierte löschen“** gibt
+  den Speicher wieder frei. Ohne diesen Schritt wird nie etwas gelöscht.
+- Einzelne Aufnahmen kann man dort auch direkt anhören und einzeln teilen.
+
+**Tipp:** Exportiere regelmäßig (z. B. jeden Abend). Solange die Aufnahmen nur auf dem
+iPad liegen, gehen sie verloren, wenn die Home-Bildschirm-App gelöscht wird oder unter
+*Einstellungen → Safari → Websitedaten* die Daten entfernt werden.
+
+### Videos oder Texte ändern
+
+Dateien in `public/` austauschen, neu veröffentlichen, dann auf dem iPad (mit Internet)
+in der Export-Seite **„Videos & Seite neu laden“** tippen.
+
+---
+
+## Variante 2: Mit Laptop-Server
+
+Nur Python 3 nötig, keine Installation, kein Internet.
+
+**Laptop ist selbst das Gerät:**
 
 ```bash
 python3 server.py
 ```
 
-Dann `http://localhost:8000` öffnen (am besten Chrome oder Safari, Vollbild mit F11 bzw. ⌃⌘F).
+Dann `http://localhost:8000` öffnen.
 
-**B) iPad / Handy als Gerät, Laptop als Server** (beide im selben WLAN – das WLAN braucht
-keinen Internetzugang, ein Router oder der Hotspot des Laptops reicht):
+**iPad / Handy als Gerät, Laptop als Server** (selbes WLAN, z. B. Hotspot des Laptops):
 
 ```bash
 python3 server.py --https
 ```
 
-Auf dem iPad die angezeigte Adresse öffnen, z. B. `https://192.168.1.23:8443`.
-Beim ersten Mal kommt eine Zertifikatswarnung → „Details einblenden“ → „Diese Website besuchen“.
-Danach Mikrofon (bzw. Kamera) erlauben.
+Auf dem iPad die angezeigte `https://…:8443`-Adresse öffnen, die Zertifikatswarnung
+bestätigen („Details einblenden“ → „Diese Website besuchen“) und das Mikrofon erlauben.
+HTTPS ist nötig, weil Browser das Mikrofon sonst sperren. Das Zertifikat wird
+automatisch in `./cert` erzeugt. Ändert sich die IP des Laptops, den Ordner löschen.
 
-> Warum HTTPS? Browser geben Mikrofon/Kamera nur auf sicheren Seiten frei. `localhost` gilt
-> als sicher, eine WLAN-IP nur mit HTTPS. Das Zertifikat wird automatisch in `./cert` erzeugt
-> (braucht `openssl`, auf macOS/Linux vorinstalliert). Ändert sich die IP des Laptops, einfach
-> den Ordner `cert` löschen und neu starten.
+Aufnahmen landen dann direkt auf dem Laptop:
 
-### Tipps für den Ausstellungsbetrieb (iPad)
-- Seite in Safari öffnen → Teilen → **„Zum Home-Bildschirm“** → startet ohne Adressleiste.
-- **Geführter Zugriff** (Einstellungen → Bedienungshilfen) sperrt das iPad auf diese App.
-- Automatische Sperre ausschalten, Lautstärke hoch, ggf. externes Mikrofon/Kopfhörer.
+```
+recordings/2026-11-03_14-05-22/
+  01_antwort.m4a      ← Original aus dem Browser (.m4a/.mp4 bei Safari, .webm bei Chrome)
+  01_antwort.mp3      ← überall abspielbare Kopie (wenn ffmpeg installiert ist)
+  anruf.json          ← Zeitstempel, Dauer, aufgelegt ja/nein …
+```
+
+Abschalten der MP3/MP4-Kopien: `python3 server.py --ohne-konvertierung`.
+Fällt der Server während eines Anrufs aus, speichert die Seite auf dem Gerät
+(Export dann wie in Variante 1).
+
+---
 
 ## Eigene Videos einsetzen
 
-Videos in den Ordner `videos/` legen und in `public/config.json` eintragen. Die mitgelieferten
-Dateien sind nur Platzhalter. Fehlt eine Datei, zeigt die Seite automatisch einen
-Platzhalter-Bildschirm mit Countdown – der Ablauf funktioniert also auch ohne Videos.
+Videos nach `public/videos/` legen und in `public/config.json` eintragen. Die
+mitgelieferten Dateien sind Platzhalter. Fehlt eine Datei, zeigt die Seite einen
+Platzhalter-Bildschirm mit Countdown.
 
-Empfohlenes Format (läuft auf iPad, Handy und Laptop): **MP4, H.264 + AAC**.
-Mit ffmpeg umwandeln:
+Empfohlenes Format: **MP4, H.264 + AAC**, möglichst klein (720p reicht auf dem iPad):
 
 ```bash
-ffmpeg -i mein_video.mov -c:v libx264 -crf 20 -pix_fmt yuv420p -c:a aac -b:a 160k -movflags +faststart videos/01_begruessung_frage1.mp4
+ffmpeg -i mein_video.mov -vf scale=-2:720 -c:v libx264 -crf 23 -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart public/videos/01_begruessung_frage1.mp4
 ```
 
-Tipp: Lass den Avatar am Ende jedes Fragevideos 1–2 s „zuhören“ (leicht nicken), dann wirkt
-der Übergang zur Aufnahme natürlich – das letzte Bild bleibt während der Aufnahme stehen.
-Da die Videos vorproduziert sind, sollten die „Reaktionen“ allgemein formuliert sein
-(„Spannend, dass du das so siehst …“).
+Tipps:
+- Am Ende jedes Fragevideos 1–2 s „zuhören“ lassen (leicht nicken), denn das letzte
+  Bild bleibt während der Aufnahme stehen.
+- Die Videos sind vorproduziert, also die „Reaktionen“ allgemein formulieren
+  („Spannend, dass du das so siehst …“).
 
 ## config.json
 
@@ -67,43 +129,36 @@ Da die Videos vorproduziert sind, sollten die „Reaktionen“ allgemein formuli
 |---|---|
 | `anrufer.name / untertitel / bild` | Anzeige auf Start- und Anrufbildschirm |
 | `aufnahme` | `"audio"` (nur Ton) oder `"video"` (Kamera + Ton, mit Selbstansicht) |
+| `speichern` | `"auto"` (Server wenn vorhanden, sonst Gerät), `"geraet"` oder `"server"` |
+| `adminPin` | PIN für die Export-Seite (`""` = keine PIN) |
 | `klingelnSekunden` | wie lange es vor dem „Abnehmen“ klingelt |
 | `platzhalterSekunden` | Dauer des Platzhalters, wenn ein Video fehlt |
-| `sprechen.stilleBeendetNachMs` | so lange Stille nach dem Sprechen → Aufnahme endet automatisch |
+| `sprechen.stilleBeendetNachMs` | so lange Stille nach dem Sprechen → Aufnahme endet |
 | `sprechen.maxDauerMs` | maximale Länge einer Antwort |
 | `sprechen.keineSpracheAbbruchMs` | sagt jemand gar nichts, geht es nach dieser Zeit weiter |
-| `sprechen.lautstaerkeSchwelle` | ab welchem Pegel als „Sprechen“ erkannt wird (passt sich zusätzlich ans Grundrauschen an) |
+| `sprechen.lautstaerkeSchwelle` | ab welchem Pegel „Sprechen“ erkannt wird (passt sich zusätzlich ans Grundrauschen an) |
 | `mikrofonNurBeimSprechen` | `true`, falls auf iPhones der Videoton bei aktivem Mikrofon zu leise wird |
-| `ablauf` | Liste der Videos; `danachAufnehmen: true` = nach diesem Video darf gesprochen werden |
+| `ablauf` | Liste der Videos; `danachAufnehmen: true` = danach darf gesprochen werden |
 
-Mehr Fragen? Einfach weitere Einträge in `ablauf` ergänzen.
-Zusätzlich gibt es immer den Knopf **„Fertig gesprochen“**.
+Für mehr Fragen einfach weitere Einträge in `ablauf` ergänzen. Den Knopf
+**„Fertig gesprochen“** gibt es immer zusätzlich.
 
-## Wo landen die Aufnahmen?
+## Ausstellungsbetrieb (iPad)
 
-```
-recordings/
-  2026-11-03_14-05-22/          ← ein Ordner pro Anruf
-    01_antwort.m4a              ← Original aus dem Browser
-    01_antwort.mp3              ← überall abspielbare Kopie (wenn ffmpeg installiert ist)
-    02_antwort.m4a
-    02_antwort.mp3
-    anruf.json                  ← Zeitstempel, Dauer, aufgelegt ja/nein, Grund fürs Aufnahmeende
-```
-
-Je nach Browser ist das Original `.m4a`/`.mp4` (Safari) oder `.webm` (Chrome).
-Ist **ffmpeg** auf dem Laptop installiert (`brew install ffmpeg` / `apt install ffmpeg`),
-legt der Server automatisch eine MP3 (Audio) bzw. H.264-MP4 (Video) daneben.
-Abschalten mit `python3 server.py --ohne-konvertierung`.
-
-Kann der Server mal nicht erreicht werden, versucht die Seite es mehrmals erneut und lädt die
-Datei notfalls direkt auf dem Gerät herunter.
+- **Geführter Zugriff** (Einstellungen → Bedienungshilfen) sperrt das iPad auf die App.
+  Für den Export kurz beenden (3× Seitentaste).
+- Automatische Sperre aus, Lautstärke hoch, ggf. Kopfhörer oder Telefonhörer mit Mikrofon.
+- iPad am Strom lassen.
 
 ## Dateien
 
 ```
-server.py          lokaler Server (Python-Standardbibliothek, keine Installation)
-public/            Website (index.html, style.css, app.js, config.json, avatar.svg)
-videos/            Avatar-Videos (aktuell Platzhalter)
-recordings/        Aufnahmen (wird automatisch angelegt, nicht im Git)
+public/            die Website (wird veröffentlicht bzw. von server.py ausgeliefert)
+  index.html, style.css, app.js   Anruf
+  admin.html, admin.js            Export-Seite
+  storage.js                      Speichern auf dem Gerät + ZIP
+  sw.js, manifest.webmanifest     Offline-Betrieb / Home-Bildschirm-App
+  config.json                     Ablauf & Einstellungen
+  videos/                         Avatar-Videos (aktuell Platzhalter)
+server.py          optionaler Laptop-Server (Python-Standardbibliothek)
 ```

@@ -15,6 +15,7 @@
   let call = null;          // aktueller Anruf (null = kein Anruf)
   let audioCtx = null;
   let stream = null;        // Mikrofon (+ Kamera)
+  let storeMode = "geraet"; // "server" (server.py läuft) oder "geraet" (IndexedDB auf dem iPad)
 
   class Aborted extends Error {}
 
@@ -65,10 +66,39 @@
     (config.ablauf || []).forEach((s) => { const l = document.createElement("link"); l.rel = "prefetch"; l.href = s.video; document.head.appendChild(l); });
 
     tickClock(); setInterval(tickClock, 10000);
+    setupAdminGesture();
+    storeMode = await detectStoreMode();
+    console.log("Speicherort:", storeMode);
+    if ("serviceWorker" in navigator && window.isSecureContext) {
+      navigator.serviceWorker.register("sw.js").catch((e) => console.warn("Service Worker:", e));
+    }
     if (!window.isSecureContext) {
       showError("Achtung: Diese Seite ist nicht über HTTPS/localhost geöffnet – der Browser blockiert das Mikrofon. " +
                 "Server mit  python3 server.py --https  starten und die https://-Adresse öffnen.");
     }
+  }
+
+  async function detectStoreMode() {
+    const wanted = config.speichern || "auto";
+    if (wanted === "geraet" || wanted === "server") return wanted;
+    try {
+      const ctl = new AbortController();
+      const t = setTimeout(() => ctl.abort(), 1500);
+      const r = await fetch("api/ping", { cache: "no-store", signal: ctl.signal });
+      clearTimeout(t);
+      if (r.ok && (await r.json()).ok) return "server";
+    } catch (_) {}
+    return "geraet";
+  }
+
+  /** Versteckter Zugang zur Export-Seite: 5× schnell auf die Uhr tippen. */
+  function setupAdminGesture() {
+    let taps = [];
+    $("clock").addEventListener("click", () => {
+      const now = Date.now();
+      taps = taps.filter((t) => now - t < 3000).concat(now);
+      if (taps.length >= 5) location.href = "admin.html";
+    });
   }
 
   function tickClock() {
@@ -115,6 +145,7 @@
     }
 
     requestWakeLock();
+    if (storeMode === "geraet" && navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
     runCall().catch((e) => {
       if (!(e instanceof Aborted)) { console.error(e); hangUp(true); }
     });
@@ -299,8 +330,16 @@
   // ------------------------------------------------------------------ Speichern
   function upload(blob, name, entry) {
     const id = call.id;
+    const saveLocal = async () => {
+      try {
+        const f = await TZStore.saveRecording(id, name, blob);
+        if (entry) entry.gespeichert = "geraet:" + f;
+        return true;
+      } catch (e) { console.error("Lokales Speichern fehlgeschlagen", e); return false; }
+    };
     const p = (async () => {
-      for (let attempt = 0; attempt < 5; attempt++) {
+      if (storeMode === "geraet") return saveLocal();
+      for (let attempt = 0; attempt < 3; attempt++) {
         try {
           const r = await fetch("api/upload", {
             method: "POST",
@@ -311,12 +350,8 @@
         } catch (e) { console.warn("Upload fehlgeschlagen, neuer Versuch …", e); }
         await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
       }
-      // Notlösung: Datei direkt im Browser herunterladen
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `${id}_${name}.${blob.type.includes("mp4") ? "mp4" : "webm"}`;
-      a.click();
-      return false;
+      // Server nicht erreichbar → auf dem Gerät speichern (Export über admin.html)
+      return saveLocal();
     })();
     call.uploads.push(p);
     return p;
@@ -362,7 +397,13 @@
 
     const results = await Promise.all(c.uploads);
     if (c.uploads.length) $("end-save").textContent = results.every(Boolean) ? "Aufnahmen gespeichert ✓" : "Speichern teilweise fehlgeschlagen";
-    fetch("api/log", { method: "POST", headers: { "Content-Type": "application/json", "X-Session": c.id }, body: JSON.stringify(c.log, null, 2) }).catch(() => {});
+    c.log.speicherort = storeMode;
+    if (storeMode === "server") {
+      fetch("api/log", { method: "POST", headers: { "Content-Type": "application/json", "X-Session": c.id }, body: JSON.stringify(c.log, null, 2) })
+        .catch(() => TZStore.saveLog(c.id, c.log).catch(() => {}));
+    } else {
+      TZStore.saveLog(c.id, c.log).catch((e) => console.error(e));
+    }
 
     await new Promise((r) => setTimeout(r, (config.endbildschirmSekunden ?? 6) * 1000));
     $("call-timer").textContent = "00:00";
