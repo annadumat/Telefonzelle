@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#05070d">
+  <link rel="manifest" href="manifest.webmanifest">
+  <title>Telefonzelle · Export</title>
+  <style>
+    :root { --bg: #05070d; --card: #111a30; --line: #243150; --fg: #f2f5ff; --muted: #9aa6c4; --accent: #6ee7ff; --green: #30d158; --red: #ff453a; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { padding: calc(env(safe-area-inset-top, 0px) + 20px) 16px calc(env(safe-area-inset-bottom, 0px) + 40px); max-width: 900px; margin: 0 auto; }
+    h1 { font-size: 26px; font-weight: 600; }
+    h2 { font-size: 17px; font-weight: 600; margin: 28px 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    header { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 18px; }
+    .stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+    .stat b { display: block; font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .stat span { color: var(--muted); font-size: 14px; }
+    .stat.warn b { color: #ffd60a; } .stat.ok b { color: var(--green); }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+    button, .btn {
+      font: inherit; font-size: 16px; font-weight: 500; color: var(--fg); text-decoration: none;
+      background: #1d2947; border: 1px solid var(--line); border-radius: 12px; padding: 12px 18px; cursor: pointer;
+    }
+    button:active { filter: brightness(1.2); }
+    button:disabled { opacity: .45; }
+    .primary { background: #0a84ff; border-color: #0a84ff; }
+    .danger { color: #ffb4ae; }
+    .note { color: var(--muted); font-size: 14px; line-height: 1.45; margin-top: 10px; }
+    .panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-top: 14px; }
+    .panel[hidden] { display: none; }
+    .call { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; }
+    .call-head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .call-head small { color: var(--muted); }
+    .rec { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    .rec audio, .rec video { height: 40px; max-width: 100%; flex: 1 1 260px; }
+    .rec video { height: auto; max-height: 200px; border-radius: 8px; background: #000; }
+    .rec .name { font-family: ui-monospace, Menlo, monospace; font-size: 13px; color: var(--muted); min-width: 140px; }
+    .tag { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: #24304f; color: var(--muted); }
+    .tag.new { background: rgba(48, 209, 88, .18); color: var(--green); }
+    .rec button { padding: 8px 12px; font-size: 14px; }
+    .empty { color: var(--muted); padding: 20px 0; }
+    .progress { height: 6px; background: #24304f; border-radius: 3px; overflow: hidden; margin-top: 10px; }
+    .progress div { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+    #pin { position: fixed; inset: 0; background: var(--bg); display: grid; place-items: center; z-index: 10; }
+    #pin[hidden] { display: none; }
+    #pin form { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+    #pin input { font-size: 28px; text-align: center; letter-spacing: .3em; width: 200px; padding: 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--fg); }
+  </style>
+</head>
+<body>
+  <div id="pin" hidden>
+    <form id="pin-form">
+      <h1>Export</h1>
+      <input id="pin-input" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN">
+      <button class="primary" type="submit">Öffnen</button>
+      <a class="btn" href="./">Zurück</a>
+      <p class="note" id="pin-msg"></p>
+    </form>
+  </div>
+
+  <header>
+    <h1>Telefonzelle · Aufnahmen</h1>
+    <a class="btn" href="./">← Zurück zum Anruf</a>
+  </header>
+
+  <div class="stats">
+    <div class="stat" id="st-new"><b>–</b><span>neue Aufnahmen</span></div>
+    <div class="stat"><b id="st-all">–</b><span>Aufnahmen gesamt</span></div>
+    <div class="stat"><b id="st-calls">–</b><span>Anrufe</span></div>
+    <div class="stat"><b id="st-size">–</b><span id="st-size-l">belegt</span></div>
+    <div class="stat" id="st-offline"><b>–</b><span>offline bereit</span></div>
+    <div class="stat" id="st-persist"><b>–</b><span>Speicher geschützt</span></div>
+  </div>
+
+  <h2>Exportieren</h2>
+  <div class="actions">
+    <button class="primary" id="btn-prep-new">Neue exportieren</button>
+    <button id="btn-prep-all">Alle exportieren</button>
+    <button class="danger" id="btn-del-exported">Exportierte löschen</button>
+  </div>
+  <div class="panel" id="export-panel" hidden>
+    <div id="export-info">ZIP wird erstellt …</div>
+    <div class="progress"><div id="export-bar"></div></div>
+    <div class="actions" id="export-actions" hidden>
+      <button class="primary" id="btn-share">Teilen / AirDrop / In Dateien sichern</button>
+      <a class="btn" id="btn-download" download>Herunterladen</a>
+    </div>
+  </div>
+  <p class="note">
+    Exportiert wird eine ZIP-Datei mit einem Ordner pro Anruf (Aufnahmen + anruf.json).
+    Auf dem iPad am besten <b>„In Dateien sichern“</b> oder per <b>AirDrop</b> an einen Mac schicken.
+    Nach erfolgreichem Teilen werden die Aufnahmen als exportiert markiert. Gelöscht wird erst,
+    wenn du auf „Exportierte löschen“ tippst.
+  </p>
+
+  <h2>Offline</h2>
+  <div class="actions">
+    <button id="btn-refresh">Videos &amp; Seite neu laden (braucht Internet)</button>
+  </div>
+  <div class="panel" id="refresh-panel" hidden>
+    <div id="refresh-info"></div>
+    <div class="progress"><div id="refresh-bar"></div></div>
+  </div>
+  <p class="note">Nach dem Austauschen von Videos oder der config.json einmal mit Internet hier tippen.</p>
+
+  <h2>Anrufe</h2>
+  <div id="calls"><p class="empty">Lade …</p></div>
+
+  <script src="storage.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

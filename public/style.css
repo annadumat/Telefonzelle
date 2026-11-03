@@ -38,7 +38,7 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 .screen.active { opacity: 1; pointer-events: auto; }
 
 /* ---------- Kontakt ---------- */
-.clock { font-size: 15px; letter-spacing: .08em; color: var(--muted); }
+.clock { padding: 10px 24px; font-size: 15px; letter-spacing: .08em; color: var(--muted); }
 .contact { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; margin-top: 6vh; }
 .contact h1 { font-size: clamp(30px, 6vw, 52px); font-weight: 600; letter-spacing: -.01em; }
 .contact p { color: var(--muted); font-size: clamp(16px, 2.4vw, 21px); }

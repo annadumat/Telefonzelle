@@ -6,6 +6,8 @@
   },
 
   "aufnahme": "audio",
+  "speichern": "auto",
+  "adminPin": "2075",
 
   "klingelnSekunden": 4,
   "platzhalterSekunden": 5,
