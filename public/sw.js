@@ -3,7 +3,7 @@
  * - Videos: aus dem Cache (mit Range-Unterstützung, die Safari für Videos braucht)
  * - /api/…: nie cachen (nur relevant, wenn server.py benutzt wird)
  */
-const CACHE = "telefonzelle-v1";
+const CACHE = "telefonzelle-v3";
 const APP_FILES = [
   "./", "index.html", "style.css", "app.js", "storage.js", "config.json", "avatar.svg",
   "admin.html", "admin.js", "manifest.webmanifest", "icon-512.png", "apple-touch-icon.png",
@@ -122,12 +122,17 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // App-Dateien: Cache zuerst, im Hintergrund aktualisieren
+  // App-Dateien: Netz zuerst (immer aktuelle Version), offline bzw. nach 3 s aus dem Cache
   e.respondWith((async () => {
     const cache = await caches.open(CACHE);
+    const net = fetch(req, { cache: "no-store" }).then((r) => { if (r.ok) cache.put(req, r.clone()); return r; });
+    const timeout = new Promise((res) => setTimeout(() => res(null), 3000));
+    try {
+      const r = await Promise.race([net, timeout]);
+      if (r) return r;
+    } catch (_) {}
     const cached = await cache.match(req, { ignoreSearch: true });
-    const update = fetch(req).then((r) => { if (r.ok) cache.put(req, r.clone()); return r; }).catch(() => null);
-    if (cached) { e.waitUntil(update); return cached; }
-    return (await update) || new Response("offline", { status: 503 });
+    if (cached) return cached;
+    try { return await net; } catch (_) { return new Response("offline", { status: 503 }); }
   })());
 });

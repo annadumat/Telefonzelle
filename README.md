@@ -49,7 +49,7 @@ läuft ohne Internet. Die Aufnahmen bleiben auf dem iPad, bis du sie exportierst
 ### Aufnahmen exportieren
 
 - Auf dem Startbildschirm **5× schnell auf die Uhrzeit oben tippen** → Export-Seite
-  (PIN: `2075`, änderbar in `config.json` → `adminPin`).
+  (PIN: `2035`, änderbar in `config.json` → `adminPin`).
 - **„Neue exportieren“** → **„Teilen / AirDrop / In Dateien sichern“**. Du bekommst eine
   ZIP-Datei mit einem Ordner pro Anruf (Aufnahmen + `anruf.json`).
 - Danach sind die Aufnahmen als *exportiert* markiert. **„Exportierte löschen“** gibt
@@ -100,6 +100,8 @@ recordings/2026-11-03_14-05-22/
 ```
 
 Abschalten der MP3/MP4-Kopien: `python3 server.py --ohne-konvertierung`.
+Auf der Export-Seite (5× auf die Uhr tippen) kann man die Aufnahmen vom Laptop außerdem
+direkt anhören und herunterladen.
 Fällt der Server während eines Anrufs aus, speichert die Seite auf dem Gerät
 (Export dann wie in Variante 1).
 
@@ -108,7 +110,7 @@ Fällt der Server während eines Anrufs aus, speichert die Seite auf dem Gerät
 ## Eigene Videos einsetzen
 
 Videos nach `public/videos/` legen und in `public/config.json` eintragen. Die
-mitgelieferten Dateien sind Platzhalter. Fehlt eine Datei, zeigt die Seite einen
+mitgelieferte Datei `video_3_final.mp4` dient vorerst als Platzhalter für alle drei Schritte. Fehlt eine Datei, zeigt die Seite einen
 Platzhalter-Bildschirm mit Countdown.
 
 Empfohlenes Format: **MP4, H.264 + AAC**, möglichst klein (720p reicht auf dem iPad):
@@ -127,6 +129,7 @@ Tipps:
 
 | Feld | Bedeutung |
 |---|---|
+| `jahr` | Jahreszahl neben der Uhr auf dem Startbildschirm |
 | `anrufer.name / untertitel / bild` | Anzeige auf Start- und Anrufbildschirm |
 | `aufnahme` | `"audio"` (nur Ton) oder `"video"` (Kamera + Ton, mit Selbstansicht) |
 | `speichern` | `"auto"` (Server wenn vorhanden, sonst Gerät), `"geraet"` oder `"server"` |
@@ -159,6 +162,6 @@ public/            die Website (wird veröffentlicht bzw. von server.py ausgelie
   storage.js                      Speichern auf dem Gerät + ZIP
   sw.js, manifest.webmanifest     Offline-Betrieb / Home-Bildschirm-App
   config.json                     Ablauf & Einstellungen
-  videos/                         Avatar-Videos (aktuell Platzhalter)
+  videos/                         Avatar-Videos
 server.py          optionaler Laptop-Server (Python-Standardbibliothek)
 ```

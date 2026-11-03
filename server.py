@@ -25,7 +25,7 @@ import subprocess
 import sys
 import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 PUBLIC = os.path.join(ROOT, "public")
@@ -53,10 +53,13 @@ class Handler(SimpleHTTPRequestHandler):
     server_version = "Telefonzelle/1.0"
 
     def translate_path(self, path):
-        p = urlparse(path).path
-        base, rel = PUBLIC, p.lstrip("/")
+        p = unquote(urlparse(path).path)
+        if p.startswith("/recordings/"):
+            base, rel = RECORDINGS, p[len("/recordings/"):]
+        else:
+            base, rel = PUBLIC, p.lstrip("/")
         full = os.path.normpath(os.path.join(base, rel))
-        if not full.startswith(base):
+        if full != base and not full.startswith(base + os.sep):
             return os.path.join(PUBLIC, "__forbidden__")
         return full
 
@@ -76,6 +79,8 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if urlparse(self.path).path == "/api/ping":
             return self._json(200, {"ok": True, "server": "telefonzelle"})
+        if urlparse(self.path).path == "/api/recordings":
+            return self._json(200, list_recordings())
         return super().do_GET()
 
     def do_POST(self):
@@ -135,6 +140,32 @@ class Handler(SimpleHTTPRequestHandler):
     def log_message(self, fmt, *args):
         if "/api/" in (self.path or "") or (args and str(args[1]) >= "400"):
             sys.stderr.write("%s - %s\n" % (self.address_string(), fmt % args))
+
+
+def list_recordings():
+    """Alle Anrufe im Ordner recordings/ – für die Export-Seite."""
+    out = []
+    if not os.path.isdir(RECORDINGS):
+        return out
+    for session in sorted(os.listdir(RECORDINGS), reverse=True):
+        d = os.path.join(RECORDINGS, session)
+        if not os.path.isdir(d):
+            continue
+        log, files = None, []
+        for name in sorted(os.listdir(d)):
+            full = os.path.join(d, name)
+            if name == "anruf.json":
+                try:
+                    with open(full, encoding="utf-8") as f:
+                        log = json.load(f)
+                except (OSError, ValueError):
+                    pass
+                continue
+            if os.path.isfile(full):
+                files.append({"name": name, "size": os.path.getsize(full),
+                              "url": f"recordings/{session}/{name}"})
+        out.append({"session": session, "log": log, "files": files})
+    return out
 
 
 def convert(path, is_video):
@@ -212,7 +243,7 @@ def main():
         httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
         scheme = "https"
 
-    print("\n  Telefonzelle läuft  –  Aufnahmen landen in ./recordings")
+    print("\n  Telefonzelle läuft  –  Aufnahmen landen in:\n  " + RECORDINGS)
     if CONVERT:
         print("  MP3/MP4-Kopien: " + ("an (ffmpeg gefunden)" if FFMPEG else "aus (ffmpeg nicht installiert)"))
     print()

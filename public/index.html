@@ -48,6 +48,12 @@
     <video id="video" playsinline webkit-playsinline preload="auto"></video>
 
     <!-- erscheint, wenn eine Videodatei (noch) fehlt -->
+    <!-- während man spricht: Avatar "hört zu" (Standbild aus dem Video) -->
+    <div id="listening" hidden>
+      <div class="avatar-ring listen"><img class="avatar" id="listen-avatar" src="avatar.svg" alt=""></div>
+      <p id="listen-label">hört zu …</p>
+    </div>
+
     <div id="placeholder" hidden>
       <div class="ph-box">
         <div class="ph-title">Platzhalter</div>
@@ -84,7 +90,6 @@
       <div class="avatar-ring dim"><img class="avatar" id="end-avatar" src="avatar.svg" alt=""></div>
       <h1>Anruf beendet</h1>
       <p class="status" id="end-duration"></p>
-      <p class="status small" id="end-save"></p>
     </div>
   </section>
 

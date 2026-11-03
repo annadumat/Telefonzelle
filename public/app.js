@@ -56,6 +56,7 @@
     const a = config.anrufer || {};
     for (const id of ["start-avatar", "ring-avatar", "end-avatar"]) if (a.bild) $(id).src = a.bild;
     $("start-name").textContent = $("ring-name").textContent = $("call-name").textContent = a.name || "Unbekannt";
+    $("listen-label").textContent = (a.name || "") + " hört zu …";
     $("start-sub").textContent = a.untertitel || "";
 
     $("btn-call").addEventListener("click", startCall);
@@ -69,6 +70,7 @@
     setupAdminGesture();
     storeMode = await detectStoreMode();
     console.log("Speicherort:", storeMode);
+
     if ("serviceWorker" in navigator && window.isSecureContext) {
       navigator.serviceWorker.register("sw.js").catch((e) => console.warn("Service Worker:", e));
     }
@@ -103,7 +105,7 @@
 
   function tickClock() {
     const d = new Date();
-    $("clock").textContent = pad(d.getHours()) + ":" + pad(d.getMinutes()) + " · " + (d.getFullYear() + 49);
+    $("clock").textContent = pad(d.getHours()) + ":" + pad(d.getMinutes()) + " · " + (config.jahr || d.getFullYear());
   }
 
   function showError(msg) { const e = $("start-error"); e.textContent = msg; e.hidden = false; }
@@ -201,14 +203,15 @@
 
   /** Spielt ein Video ab. Fehlt die Datei, wird ein Platzhalter angezeigt. Gibt true zurück, wenn Platzhalter. */
   async function playVideo(src) {
-    video.classList.remove("fade");
+    showListening(false);
     const ok = await guard(new Promise((resolve) => {
       let done = false;
       const fin = (v) => { if (!done) { done = true; cleanup(); resolve(v); } };
       const onEnd = () => fin(true);
       const onErr = () => fin(false);
-      const cleanup = () => { video.removeEventListener("ended", onEnd); video.removeEventListener("error", onErr); };
+      const cleanup = () => { video.removeEventListener("ended", onEnd); video.removeEventListener("error", onErr); video.removeEventListener("timeupdate", captureFrame); };
       video.addEventListener("ended", onEnd);
+      video.addEventListener("timeupdate", captureFrame);
       video.addEventListener("error", onErr);
       if (video.error || !video.src.endsWith(src)) video.src = src;
       video.currentTime = 0;
@@ -232,6 +235,27 @@
       for (let s = secs; s > 0; s--) { $("ph-count").textContent = s; await wait(1000); }
     } finally { ph.hidden = true; }
     return true;
+  }
+
+  /** Nimmt einmal pro Video ein Standbild (bei ~1,5 s) als runden Avatar für die Zuhören-Ansicht. */
+  let captured = "";
+  function captureFrame() {
+    if (video.currentTime < 1.5 || captured === video.currentSrc || !video.videoWidth) return;
+    captured = video.currentSrc;
+    try {
+      const w = video.videoWidth, h = video.videoHeight;
+      const size = Math.round(Math.min(w, h) * 0.55);          // Ausschnitt um den Kopf (Bildmitte, oberes Drittel)
+      const sx = Math.round((w - size) / 2), sy = Math.round(h * 0.04);
+      const c = document.createElement("canvas");
+      c.width = c.height = 360;
+      c.getContext("2d").drawImage(video, sx, sy, size, size, 0, 0, 360, 360);
+      $("listen-avatar").src = c.toDataURL("image/jpeg", 0.85);
+    } catch (e) { console.warn("Standbild nicht möglich", e); }
+  }
+
+  function showListening(on) {
+    $("listening").hidden = !on;
+    video.style.opacity = on ? "0" : "1";
   }
 
   // ------------------------------------------------------------------ Aufnahme
@@ -270,7 +294,7 @@
     call.stopRecording = stop;
     call.activeRecording = { stop, name };
 
-    video.classList.add("fade");
+    showListening(true);
     label.textContent = "Du kannst jetzt sprechen …";
     talk.hidden = false;
     rec.start(1000);
@@ -330,15 +354,24 @@
   // ------------------------------------------------------------------ Speichern
   function upload(blob, name, entry) {
     const id = call.id;
-    const saveLocal = async () => {
+    // Ergebnis: { ok, wo: "server" | "geraet", datei, fehler }
+    const saveLocal = async (fehler) => {
       try {
         const f = await TZStore.saveRecording(id, name, blob);
         if (entry) entry.gespeichert = "geraet:" + f;
-        return true;
-      } catch (e) { console.error("Lokales Speichern fehlgeschlagen", e); return false; }
+        return { ok: true, wo: "geraet", datei: f, fehler };
+      } catch (e) {
+        console.error("Lokales Speichern fehlgeschlagen", e);
+        return { ok: false, fehler: (fehler ? fehler + "; " : "") + "Browser-Speicher: " + e.message };
+      }
     };
     const p = (async () => {
+      if (!blob.size) {
+        console.error("Aufnahme ist leer (0 Byte) – Mikrofon liefert keine Daten?");
+        return { ok: false, fehler: "Aufnahme war leer – Mikrofon prüfen" };
+      }
       if (storeMode === "geraet") return saveLocal();
+      let fehler = "";
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
           const r = await fetch("api/upload", {
@@ -346,12 +379,14 @@
             headers: { "Content-Type": blob.type || "application/octet-stream", "X-Session": id, "X-Name": name },
             body: blob,
           });
-          if (r.ok) { const j = await r.json(); if (entry) entry.gespeichert = j.file; return true; }
-        } catch (e) { console.warn("Upload fehlgeschlagen, neuer Versuch …", e); }
+          if (r.ok) { const j = await r.json(); if (entry) entry.gespeichert = j.file; return { ok: true, wo: "server", datei: j.file }; }
+          fehler = "Server antwortet " + r.status;
+        } catch (e) { fehler = "Server nicht erreichbar (" + e.message + ")"; }
+        console.warn("Upload fehlgeschlagen:", fehler, "– neuer Versuch …");
         await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
       }
       // Server nicht erreichbar → auf dem Gerät speichern (Export über admin.html)
-      return saveLocal();
+      return saveLocal(fehler);
     })();
     call.uploads.push(p);
     return p;
@@ -386,7 +421,6 @@
 
     const duration = Date.now() - c.started;
     $("end-duration").textContent = (byUser ? "Aufgelegt · " : "") + fmtTime(duration);
-    $("end-save").textContent = c.uploads.length ? "Aufnahmen werden gespeichert …" : "";
     show("end");
 
     c.log.anrufId = c.id;
@@ -396,7 +430,11 @@
     c.log.geraet = navigator.userAgent;
 
     const results = await Promise.all(c.uploads);
-    if (c.uploads.length) $("end-save").textContent = results.every(Boolean) ? "Aufnahmen gespeichert ✓" : "Speichern teilweise fehlgeschlagen";
+    if (c.uploads.length) {
+      const summary = saveSummary(results);   // nicht im Anruf anzeigen – steht auf der Export-Seite
+      console.log("Speichern:", summary);
+      try { localStorage.setItem("tz-last-save", JSON.stringify({ session: c.id, text: summary, ok: results.every((r) => r.ok) })); } catch (_) {}
+    }
     c.log.speicherort = storeMode;
     if (storeMode === "server") {
       fetch("api/log", { method: "POST", headers: { "Content-Type": "application/json", "X-Session": c.id }, body: JSON.stringify(c.log, null, 2) })
@@ -407,9 +445,26 @@
 
     await new Promise((r) => setTimeout(r, (config.endbildschirmSekunden ?? 6) * 1000));
     $("call-timer").textContent = "00:00";
-    video.classList.remove("fade");
+    showListening(false);
     call = null;
     show("start");
+  }
+
+  function saveSummary(results) {
+    const ok = results.filter((r) => r.ok);
+    const bad = results.filter((r) => !r.ok);
+    const parts = [];
+    if (ok.some((r) => r.wo === "server")) {
+      const dir = ok.find((r) => r.wo === "server").datei.replace(/[\\/][^\\/]*$/, "");
+      parts.push(`✓ ${ok.filter((r) => r.wo === "server").length} Aufnahme(n) gespeichert in ${dir}`);
+    }
+    const local = ok.filter((r) => r.wo === "geraet");
+    if (local.length) {
+      parts.push(`✓ ${local.length} Aufnahme(n) im Browser gespeichert – Export: 5× auf die Uhr tippen` +
+                 (local[0].fehler ? ` (${local[0].fehler})` : ""));
+    }
+    if (bad.length) parts.push(`✗ ${bad.length} nicht gespeichert: ${bad[0].fehler}`);
+    return parts.join(" · ");
   }
 
   // ------------------------------------------------------------------ Töne (offline erzeugt)
