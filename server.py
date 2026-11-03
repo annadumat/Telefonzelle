@@ -212,7 +212,7 @@ def main():
         httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
         scheme = "https"
 
-    print("\n  Telefonzelle läuft  –  Aufnahmen landen in ./recordings")
+    print("\n  Telefonzelle läuft  –  Aufnahmen landen in:\n  " + RECORDINGS)
     if CONVERT:
         print("  MP3/MP4-Kopien: " + ("an (ffmpeg gefunden)" if FFMPEG else "aus (ffmpeg nicht installiert)"))
     print()

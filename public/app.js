@@ -69,6 +69,9 @@
     setupAdminGesture();
     storeMode = await detectStoreMode();
     console.log("Speicherort:", storeMode);
+    $("start-store").textContent = storeMode === "server"
+      ? "Aufnahmen werden auf dem Laptop gespeichert (Ordner recordings)"
+      : "Aufnahmen werden in diesem Browser gespeichert · Export: 5× auf die Uhr tippen";
     if ("serviceWorker" in navigator && window.isSecureContext) {
       navigator.serviceWorker.register("sw.js").catch((e) => console.warn("Service Worker:", e));
     }
@@ -330,15 +333,24 @@
   // ------------------------------------------------------------------ Speichern
   function upload(blob, name, entry) {
     const id = call.id;
-    const saveLocal = async () => {
+    // Ergebnis: { ok, wo: "server" | "geraet", datei, fehler }
+    const saveLocal = async (fehler) => {
       try {
         const f = await TZStore.saveRecording(id, name, blob);
         if (entry) entry.gespeichert = "geraet:" + f;
-        return true;
-      } catch (e) { console.error("Lokales Speichern fehlgeschlagen", e); return false; }
+        return { ok: true, wo: "geraet", datei: f, fehler };
+      } catch (e) {
+        console.error("Lokales Speichern fehlgeschlagen", e);
+        return { ok: false, fehler: (fehler ? fehler + "; " : "") + "Browser-Speicher: " + e.message };
+      }
     };
     const p = (async () => {
+      if (!blob.size) {
+        console.error("Aufnahme ist leer (0 Byte) – Mikrofon liefert keine Daten?");
+        return { ok: false, fehler: "Aufnahme war leer – Mikrofon prüfen" };
+      }
       if (storeMode === "geraet") return saveLocal();
+      let fehler = "";
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
           const r = await fetch("api/upload", {
@@ -346,12 +358,14 @@
             headers: { "Content-Type": blob.type || "application/octet-stream", "X-Session": id, "X-Name": name },
             body: blob,
           });
-          if (r.ok) { const j = await r.json(); if (entry) entry.gespeichert = j.file; return true; }
-        } catch (e) { console.warn("Upload fehlgeschlagen, neuer Versuch …", e); }
+          if (r.ok) { const j = await r.json(); if (entry) entry.gespeichert = j.file; return { ok: true, wo: "server", datei: j.file }; }
+          fehler = "Server antwortet " + r.status;
+        } catch (e) { fehler = "Server nicht erreichbar (" + e.message + ")"; }
+        console.warn("Upload fehlgeschlagen:", fehler, "– neuer Versuch …");
         await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
       }
       // Server nicht erreichbar → auf dem Gerät speichern (Export über admin.html)
-      return saveLocal();
+      return saveLocal(fehler);
     })();
     call.uploads.push(p);
     return p;
@@ -396,7 +410,7 @@
     c.log.geraet = navigator.userAgent;
 
     const results = await Promise.all(c.uploads);
-    if (c.uploads.length) $("end-save").textContent = results.every(Boolean) ? "Aufnahmen gespeichert ✓" : "Speichern teilweise fehlgeschlagen";
+    if (c.uploads.length) $("end-save").textContent = saveSummary(results);
     c.log.speicherort = storeMode;
     if (storeMode === "server") {
       fetch("api/log", { method: "POST", headers: { "Content-Type": "application/json", "X-Session": c.id }, body: JSON.stringify(c.log, null, 2) })
@@ -410,6 +424,23 @@
     video.classList.remove("fade");
     call = null;
     show("start");
+  }
+
+  function saveSummary(results) {
+    const ok = results.filter((r) => r.ok);
+    const bad = results.filter((r) => !r.ok);
+    const parts = [];
+    if (ok.some((r) => r.wo === "server")) {
+      const dir = ok.find((r) => r.wo === "server").datei.replace(/[\\/][^\\/]*$/, "");
+      parts.push(`✓ ${ok.filter((r) => r.wo === "server").length} Aufnahme(n) gespeichert in ${dir}`);
+    }
+    const local = ok.filter((r) => r.wo === "geraet");
+    if (local.length) {
+      parts.push(`✓ ${local.length} Aufnahme(n) im Browser gespeichert – Export: 5× auf die Uhr tippen` +
+                 (local[0].fehler ? ` (${local[0].fehler})` : ""));
+    }
+    if (bad.length) parts.push(`✗ ${bad.length} nicht gespeichert: ${bad[0].fehler}`);
+    return parts.join(" · ");
   }
 
   // ------------------------------------------------------------------ Töne (offline erzeugt)
