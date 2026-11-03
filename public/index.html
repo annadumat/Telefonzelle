@@ -10,7 +10,7 @@
   <title>Anruf in die Zukunft</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 
@@ -70,7 +70,11 @@
     <!-- eigenes Bild (Videomodus) bzw. Mikrofon-Pegel (Audiomodus) -->
     <div id="self" class="self">
       <video id="self-video" playsinline muted autoplay></video>
-      <div id="self-audio" class="self-audio"><span>Du</span></div>
+      <div id="self-audio" class="self-audio">
+        <i class="ring r1"></i><i class="ring r2"></i>
+        <span class="me">Du</span>
+      </div>
+      <svg class="mic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11z"/></svg>
     </div>
 
     <div id="talk" class="talk" hidden>
@@ -93,8 +97,8 @@
     </div>
   </section>
 
-  <script src="version.js?v=7"></script>
-  <script src="storage.js?v=7"></script>
-  <script src="app.js?v=7"></script>
+  <script src="version.js?v=8"></script>
+  <script src="storage.js?v=8"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>

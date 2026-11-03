@@ -136,23 +136,52 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 @keyframes flicker { 0%, 70%, 100% { opacity: 1; } 75%, 85% { opacity: .25; } }
 
 .self {
+  --lvl: 0;
   position: absolute; right: 18px; top: calc(var(--safe-top) + 78px);
   width: clamp(100px, 20vw, 190px); aspect-ratio: 3 / 4;
   border-radius: 16px; overflow: hidden;
-  background: #1b2238; border: 1px solid rgba(255, 255, 255, .15);
+  background: radial-gradient(120% 90% at 50% 30%, #26315a 0%, #161d33 70%);
+  border: 2px solid rgba(255, 255, 255, .12);
   box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
+  transition: border-color .25s ease, box-shadow .25s ease;
 }
+/* Mikrofon hört zu (Sprechphase) */
+.self.live { border-color: rgba(48, 209, 88, .45); }
+/* Person spricht gerade */
+.self.speaking {
+  border-color: var(--green);
+  box-shadow: 0 0 0 2px rgba(48, 209, 88, .55), 0 0 calc(18px + var(--lvl) * 40px) rgba(48, 209, 88, .65), 0 10px 30px rgba(0, 0, 0, .5);
+}
+.self .mic {
+  position: absolute; left: 10px; bottom: 10px; width: 22px; height: 22px; padding: 4px;
+  border-radius: 50%; fill: #fff; background: rgba(0, 0, 0, .45);
+  opacity: .55; transition: background .2s, opacity .2s;
+}
+.self.live .mic { opacity: 1; }
+.self.speaking .mic { background: var(--green); }
 .self video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none; }
 .self.has-video video { display: block; }
 .self.has-video .self-audio { display: none; }
 .self-audio { position: absolute; inset: 0; display: grid; place-items: center; }
-.self-audio span {
+.self-audio .me {
+  position: relative; z-index: 1;
   width: 56%; aspect-ratio: 1; border-radius: 50%;
-  display: grid; place-items: center; font-weight: 600; font-size: 18px;
-  background: #2b3556;
-  box-shadow: 0 0 0 calc(var(--lvl, 0) * 26px) rgba(48, 209, 88, .35);
-  transition: box-shadow .08s linear;
+  display: grid; place-items: center; font-weight: 600; font-size: clamp(15px, 2vw, 20px);
+  background: linear-gradient(160deg, #3a4775, #263156);
+  border: 2px solid rgba(255, 255, 255, .12);
+  transform: scale(calc(1 + var(--lvl) * .08));
+  transition: transform .08s linear, border-color .2s, background .2s;
 }
+.self.speaking .me { border-color: var(--green); background: linear-gradient(160deg, #2f6b46, #1f4a33); }
+/* Ringe wachsen mit der Lautstärke */
+.self-audio .ring {
+  position: absolute; left: 50%; top: 50%; width: 56%; aspect-ratio: 1; border-radius: 50%;
+  transform: translate(-50%, -50%) scale(1); opacity: 0;
+  border: 2px solid var(--green);
+  transition: transform .1s linear, opacity .2s;
+}
+.self.speaking .ring.r1 { opacity: calc(.35 + var(--lvl) * .6); transform: translate(-50%, -50%) scale(calc(1.1 + var(--lvl) * .35)); }
+.self.speaking .ring.r2 { opacity: calc(.15 + var(--lvl) * .45); transform: translate(-50%, -50%) scale(calc(1.2 + var(--lvl) * .7)); }
 
 .talk {
   position: absolute; left: 50%; bottom: calc(var(--safe-bottom) + 140px); transform: translateX(-50%);
