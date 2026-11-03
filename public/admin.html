@@ -42,6 +42,10 @@
     .tag.new { background: rgba(48, 209, 88, .18); color: var(--green); }
     .rec button { padding: 8px 12px; font-size: 14px; }
     .empty { color: var(--muted); padding: 20px 0; }
+    .files { display: flex; flex-wrap: wrap; gap: 6px; }
+    .files a { font-size: 13px; color: var(--accent); text-decoration: none; padding: 4px 10px; border: 1px solid var(--line); border-radius: 99px; }
+    #browser-title { margin-top: 36px; font-size: 20px; color: var(--fg); text-transform: none; letter-spacing: 0; }
+    #server-section h2:first-child { font-size: 20px; color: var(--fg); text-transform: none; letter-spacing: 0; }
     .progress { height: 6px; background: #24304f; border-radius: 3px; overflow: hidden; margin-top: 10px; }
     .progress div { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
     #pin { position: fixed; inset: 0; background: var(--bg); display: grid; place-items: center; z-index: 10; }
@@ -67,14 +71,24 @@
   </header>
 
   <div class="stats">
-    <div class="stat" id="st-new"><b>–</b><span>neue Aufnahmen</span></div>
-    <div class="stat"><b id="st-all">–</b><span>Aufnahmen gesamt</span></div>
-    <div class="stat"><b id="st-calls">–</b><span>Anrufe</span></div>
+    <div class="stat" id="st-server" hidden><b>–</b><span>auf dem Laptop</span></div>
+    <div class="stat" id="st-new"><b>–</b><span>neu im Browser</span></div>
+    <div class="stat"><b id="st-all">–</b><span>im Browser gesamt</span></div>
+    <div class="stat"><b id="st-calls">–</b><span>Anrufe im Browser</span></div>
     <div class="stat"><b id="st-size">–</b><span id="st-size-l">belegt</span></div>
     <div class="stat" id="st-offline"><b>–</b><span>offline bereit</span></div>
     <div class="stat" id="st-persist"><b>–</b><span>Speicher geschützt</span></div>
   </div>
 
+  <p class="note" id="last-save" hidden></p>
+
+  <section id="server-section" hidden>
+    <h2>Auf dem Laptop gespeichert</h2>
+    <p class="note" id="server-path">Diese Aufnahmen liegen im Ordner <b>recordings</b> neben server.py und müssen nicht exportiert werden.</p>
+    <div id="server-calls" style="margin-top:12px"></div>
+  </section>
+
+  <h2 id="browser-title">Im Browser gespeichert</h2>
   <h2>Exportieren</h2>
   <div class="actions">
     <button class="primary" id="btn-prep-new">Neue exportieren</button>
@@ -106,7 +120,7 @@
   </div>
   <p class="note">Nach dem Austauschen von Videos oder der config.json einmal mit Internet hier tippen.</p>
 
-  <h2>Anrufe</h2>
+  <h2>Anrufe im Browser</h2>
   <div id="calls"><p class="empty">Lade …</p></div>
 
   <script src="storage.js"></script>

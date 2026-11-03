@@ -27,6 +27,71 @@
     });
   }
 
+  // ---------------------------------------------------------------- Aufnahmen auf dem Laptop (server.py)
+  async function loadServer() {
+    let calls;
+    try {
+      const r = await fetch("api/recordings", { cache: "no-store" });
+      if (!r.ok) return;
+      calls = await r.json();
+    } catch (_) { return; }   // kein Server → Abschnitt bleibt ausgeblendet
+    $("server-section").hidden = false;
+    $("st-server").hidden = false;
+    const isMedia = (n) => /\.(m4a|mp3|mp4|webm|ogg|wav)$/i.test(n);
+    $("st-server").querySelector("b").textContent = calls.reduce((n, c) => n + c.files.filter((f) => isMedia(f.name) && !/_konvertiert\.mp4$|\.mp3$/i.test(f.name)).length, 0);
+
+    const box = $("server-calls");
+    if (!calls.length) { box.innerHTML = '<p class="empty">Noch keine Anrufe auf dem Laptop gespeichert.</p>'; return; }
+    box.innerHTML = "";
+    for (const c of calls) {
+      const log = c.log || {};
+      const div = document.createElement("div");
+      div.className = "call";
+      const dur = log.dauerSekunden != null ? `${Math.floor(log.dauerSekunden / 60)}:${pad(log.dauerSekunden % 60)} min` : "";
+      div.innerHTML = `<div class="call-head"><strong>${fmtSession(c.session)}</strong><small>${dur}${log.aufgelegt ? " · aufgelegt" : ""}</small></div>`;
+
+      // Original und Kopie (mp3 / _konvertiert.mp4) zu einer Aufnahme zusammenfassen
+      const groups = new Map();
+      for (const f of c.files.filter((f) => isMedia(f.name))) {
+        const base = f.name.replace(/_konvertiert(?=\.mp4$)/, "").replace(/\.[^.]+$/, "");
+        if (!groups.has(base)) groups.set(base, []);
+        groups.get(base).push(f);
+      }
+      for (const [base, files] of groups) {
+        const row = document.createElement("div");
+        row.className = "rec";
+        // Zum Abspielen die überall lesbare Kopie bevorzugen
+        const play = files.find((f) => /\.mp3$|_konvertiert\.mp4$/i.test(f.name)) || files[0];
+        // Audio bekommt vom Server eine MP3-Kopie; ohne MP3 und mit .mp4/.webm ist es ein Video
+        const isVideo = !files.some((f) => /\.mp3$/i.test(f.name)) && /\.(mp4|webm)$/i.test(play.name);
+        const media = document.createElement(isVideo ? "video" : "audio");
+        media.controls = true; media.preload = "metadata"; media.src = play.url; media.playsInline = true;
+        const name = document.createElement("span"); name.className = "name"; name.textContent = base;
+        const links = document.createElement("span"); links.className = "files";
+        for (const f of files) {
+          const a = document.createElement("a"); a.href = f.url; a.download = f.name;
+          a.textContent = `${f.name.split(".").pop().toUpperCase()}${/_konvertiert/.test(f.name) ? " (Kopie)" : ""} · ${fmtBytes(f.size)}`;
+          links.appendChild(a);
+        }
+        row.append(name, media, links);
+        div.appendChild(row);
+      }
+      if (!groups.size) div.insertAdjacentHTML("beforeend", '<p class="note">Keine Aufnahmen (vor der ersten Antwort aufgelegt).</p>');
+      box.appendChild(div);
+    }
+  }
+
+  function showLastSave() {
+    try {
+      const l = JSON.parse(localStorage.getItem("tz-last-save") || "null");
+      if (!l) return;
+      const el = $("last-save");
+      el.hidden = false;
+      el.textContent = `Letzter Anruf (${fmtSession(l.session)}): ${l.text}`;
+      el.style.color = l.ok ? "" : "#ffb4ae";
+    } catch (_) {}
+  }
+
   // ---------------------------------------------------------------- Anzeige
   async function load() {
     recs = await S.listRecordings();
@@ -196,5 +261,5 @@
     });
   };
 
-  checkPin().then(load).catch((e) => { console.error(e); $("calls").innerHTML = `<p class="empty">Fehler: ${e.message}</p>`; });
+  checkPin().then(() => { showLastSave(); loadServer(); return load(); }).catch((e) => { console.error(e); $("calls").innerHTML = `<p class="empty">Fehler: ${e.message}</p>`; });
 })();

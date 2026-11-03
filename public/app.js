@@ -69,9 +69,7 @@
     setupAdminGesture();
     storeMode = await detectStoreMode();
     console.log("Speicherort:", storeMode);
-    $("start-store").textContent = storeMode === "server"
-      ? "Aufnahmen werden auf dem Laptop gespeichert (Ordner recordings)"
-      : "Aufnahmen werden in diesem Browser gespeichert · Export: 5× auf die Uhr tippen";
+
     if ("serviceWorker" in navigator && window.isSecureContext) {
       navigator.serviceWorker.register("sw.js").catch((e) => console.warn("Service Worker:", e));
     }
@@ -400,7 +398,6 @@
 
     const duration = Date.now() - c.started;
     $("end-duration").textContent = (byUser ? "Aufgelegt · " : "") + fmtTime(duration);
-    $("end-save").textContent = c.uploads.length ? "Aufnahmen werden gespeichert …" : "";
     show("end");
 
     c.log.anrufId = c.id;
@@ -410,7 +407,11 @@
     c.log.geraet = navigator.userAgent;
 
     const results = await Promise.all(c.uploads);
-    if (c.uploads.length) $("end-save").textContent = saveSummary(results);
+    if (c.uploads.length) {
+      const summary = saveSummary(results);   // nicht im Anruf anzeigen – steht auf der Export-Seite
+      console.log("Speichern:", summary);
+      try { localStorage.setItem("tz-last-save", JSON.stringify({ session: c.id, text: summary, ok: results.every((r) => r.ok) })); } catch (_) {}
+    }
     c.log.speicherort = storeMode;
     if (storeMode === "server") {
       fetch("api/log", { method: "POST", headers: { "Content-Type": "application/json", "X-Session": c.id }, body: JSON.stringify(c.log, null, 2) })

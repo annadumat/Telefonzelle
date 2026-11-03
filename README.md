@@ -100,6 +100,8 @@ recordings/2026-11-03_14-05-22/
 ```
 
 Abschalten der MP3/MP4-Kopien: `python3 server.py --ohne-konvertierung`.
+Auf der Export-Seite (5× auf die Uhr tippen) kann man die Aufnahmen vom Laptop außerdem
+direkt anhören und herunterladen.
 Fällt der Server während eines Anrufs aus, speichert die Seite auf dem Gerät
 (Export dann wie in Variante 1).
 
