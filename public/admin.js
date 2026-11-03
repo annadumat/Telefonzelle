@@ -261,5 +261,12 @@
     });
   };
 
+  $("version").textContent = "Version " + (window.TZ_VERSION || "?");
+  $("btn-reset").onclick = async () => {
+    if (!confirm("Offline-Speicher der App leeren und neu laden? Aufnahmen bleiben erhalten. (Danach einmal mit Internet öffnen.)")) return;
+    await S.resetApp();
+    location.href = "./";
+  };
+
   checkPin().then(() => { showLastSave(); loadServer(); return load(); }).catch((e) => { console.error(e); $("calls").innerHTML = `<p class="empty">Fehler: ${e.message}</p>`; });
 })();
