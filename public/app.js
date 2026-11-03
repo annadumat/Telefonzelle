@@ -1,0 +1,412 @@
+/* Telefonzelle – Anruf in die Zukunft
+ *
+ * Ablauf:  Start → Klingeln → Video 1 → Aufnahme → Video 2 → Aufnahme → … → Ende
+ * Auflegen ist jederzeit möglich. Aufnahmen werden an den lokalen Server
+ * (server.py) geschickt und dort in ./recordings/<Anruf>/ gespeichert.
+ */
+(() => {
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+  const video = $("video");
+  const selfVideo = $("self-video");
+
+  let config = null;
+  let call = null;          // aktueller Anruf (null = kein Anruf)
+  let audioCtx = null;
+  let stream = null;        // Mikrofon (+ Kamera)
+
+  class Aborted extends Error {}
+
+  // ------------------------------------------------------------------ Hilfen
+  const pad = (n) => String(n).padStart(2, "0");
+  const fmtTime = (ms) => { const s = Math.floor(ms / 1000); return pad(Math.floor(s / 60)) + ":" + pad(s % 60); };
+  const sessionId = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
+  };
+
+  function show(screen) {
+    document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("active", s.id === "screen-" + screen));
+  }
+
+  /** Wartet auf ein Promise, bricht aber sofort ab, wenn aufgelegt wird. */
+  function guard(promise) {
+    const c = call;
+    return new Promise((resolve, reject) => {
+      if (!c || c.aborted) return reject(new Aborted());
+      const onAbort = () => reject(new Aborted());
+      c.abortHandlers.add(onAbort);
+      promise.then(
+        (v) => { c.abortHandlers.delete(onAbort); resolve(v); },
+        (e) => { c.abortHandlers.delete(onAbort); reject(e); }
+      );
+    });
+  }
+  const wait = (ms) => guard(new Promise((r) => setTimeout(r, ms)));
+
+  // ------------------------------------------------------------------ Start
+  async function init() {
+    try {
+      config = await (await fetch("config.json", { cache: "no-store" })).json();
+    } catch (e) {
+      return showError("config.json konnte nicht geladen werden. Läuft server.py?");
+    }
+    const a = config.anrufer || {};
+    for (const id of ["start-avatar", "ring-avatar", "end-avatar"]) if (a.bild) $(id).src = a.bild;
+    $("start-name").textContent = $("ring-name").textContent = $("call-name").textContent = a.name || "Unbekannt";
+    $("start-sub").textContent = a.untertitel || "";
+
+    $("btn-call").addEventListener("click", startCall);
+    document.querySelectorAll(".hangup").forEach((b) => b.addEventListener("click", () => hangUp(true)));
+    $("btn-done").addEventListener("click", () => call && call.stopRecording && call.stopRecording("button"));
+
+    // Videos im Voraus laden, damit es später nicht ruckelt
+    (config.ablauf || []).forEach((s) => { const l = document.createElement("link"); l.rel = "prefetch"; l.href = s.video; document.head.appendChild(l); });
+
+    tickClock(); setInterval(tickClock, 10000);
+    if (!window.isSecureContext) {
+      showError("Achtung: Diese Seite ist nicht über HTTPS/localhost geöffnet – der Browser blockiert das Mikrofon. " +
+                "Server mit  python3 server.py --https  starten und die https://-Adresse öffnen.");
+    }
+  }
+
+  function tickClock() {
+    const d = new Date();
+    $("clock").textContent = pad(d.getHours()) + ":" + pad(d.getMinutes()) + " · " + (d.getFullYear() + 49);
+  }
+
+  function showError(msg) { const e = $("start-error"); e.textContent = msg; e.hidden = false; }
+
+  async function startCall() {
+    if (call) return;
+    $("start-error").hidden = true;
+
+    // Alles, was eine Nutzer-Geste braucht (iOS!), passiert JETZT synchron im Klick:
+    // 1) AudioContext entsperren, 2) Video-Element entsperren.
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    audioCtx.resume();
+    const first = config.ablauf[0];
+    video.muted = false;
+    video.src = first.video;
+    const unlock = video.play();
+    if (unlock) unlock.then(() => video.pause()).catch(() => {});
+
+    call = {
+      id: sessionId(),
+      started: Date.now(),
+      aborted: false,
+      abortHandlers: new Set(),
+      uploads: [],
+      log: { ablauf: [] },
+      stopRecording: null,
+      timer: null,
+      ring: null,
+    };
+
+    // 3) Mikrofon/Kamera anfragen
+    try {
+      await getStream();
+    } catch (e) {
+      console.error(e);
+      call = null;
+      return showError("Kein Zugriff auf " + (config.aufnahme === "video" ? "Kamera/Mikrofon" : "das Mikrofon") +
+                       ". Bitte im Browser erlauben und neu laden. (" + e.name + ")");
+    }
+
+    requestWakeLock();
+    runCall().catch((e) => {
+      if (!(e instanceof Aborted)) { console.error(e); hangUp(true); }
+    });
+  }
+
+  async function getStream() {
+    if (stream && stream.getTracks().some((t) => t.readyState === "live")) return stream;
+    const wantVideo = config.aufnahme === "video";
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      video: wantVideo ? { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } } : false,
+    });
+    const self = $("self");
+    if (wantVideo) { selfVideo.srcObject = stream; self.classList.add("has-video"); selfVideo.play().catch(() => {}); }
+    else self.classList.remove("has-video");
+    return stream;
+  }
+
+  function releaseStream() {
+    if (stream) stream.getTracks().forEach((t) => t.stop());
+    stream = null;
+    selfVideo.srcObject = null;
+  }
+
+  // ------------------------------------------------------------------ Ablauf
+  async function runCall() {
+    // Klingeln
+    show("ringing");
+    call.ring = ringtone();
+    await wait((config.klingelnSekunden ?? 3) * 1000);
+    call.ring.stop(); call.ring = null;
+
+    // "Abgenommen"
+    show("call");
+    const t0 = Date.now();
+    call.timer = setInterval(() => { $("call-timer").textContent = fmtTime(Date.now() - t0); }, 500);
+    if (config.mikrofonNurBeimSprechen) releaseStream();
+
+    const steps = config.ablauf || [];
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      const entry = { video: step.video, start: new Date().toISOString() };
+      call.log.ablauf.push(entry);
+
+      entry.platzhalter = await playVideo(step.video);
+
+      if (step.danachAufnehmen) {
+        await recordAnswer(step.aufnahmeName || `${pad(i + 1)}_antwort`, entry);
+      }
+    }
+    await finish(false);
+  }
+
+  /** Spielt ein Video ab. Fehlt die Datei, wird ein Platzhalter angezeigt. Gibt true zurück, wenn Platzhalter. */
+  async function playVideo(src) {
+    video.classList.remove("fade");
+    const ok = await guard(new Promise((resolve) => {
+      let done = false;
+      const fin = (v) => { if (!done) { done = true; cleanup(); resolve(v); } };
+      const onEnd = () => fin(true);
+      const onErr = () => fin(false);
+      const cleanup = () => { video.removeEventListener("ended", onEnd); video.removeEventListener("error", onErr); };
+      video.addEventListener("ended", onEnd);
+      video.addEventListener("error", onErr);
+      if (video.error || !video.src.endsWith(src)) video.src = src;
+      video.currentTime = 0;
+      video.muted = false;
+      const p = video.play();
+      if (p) p.catch((e) => {
+        // Autoplay blockiert? Dann notfalls stumm abspielen statt hängen zu bleiben.
+        if (e.name === "NotAllowedError") { video.muted = true; video.play().catch(onErr); }
+        else if (e.name !== "AbortError") onErr();
+      });
+    }));
+    if (ok) return false;
+
+    // Platzhalter
+    video.removeAttribute("src"); video.load();
+    const ph = $("placeholder");
+    $("ph-file").textContent = src;
+    ph.hidden = false;
+    const secs = config.platzhalterSekunden ?? 5;
+    try {
+      for (let s = secs; s > 0; s--) { $("ph-count").textContent = s; await wait(1000); }
+    } finally { ph.hidden = true; }
+    return true;
+  }
+
+  // ------------------------------------------------------------------ Aufnahme
+  function pickMime(kind) {
+    const candidates = kind === "video"
+      ? ["video/mp4;codecs=avc1.42E01E,mp4a.40.2", "video/mp4;codecs=avc1,mp4a", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"]
+      : ["audio/mp4;codecs=mp4a.40.2", "audio/mp4", "audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"];
+    if (!window.MediaRecorder) return null;
+    return candidates.find((m) => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) || "";
+  }
+
+  async function recordAnswer(name, entry) {
+    const s = await guard(getStream());
+    const kind = config.aufnahme === "video" ? "video" : "audio";
+    const recStream = kind === "video" ? s : new MediaStream(s.getAudioTracks());
+    const mime = pickMime(kind);
+    if (mime === null) throw new Error("MediaRecorder wird von diesem Browser nicht unterstützt");
+
+    const rec = new MediaRecorder(recStream, mime ? { mimeType: mime, audioBitsPerSecond: 128000 } : undefined);
+    const chunks = [];
+    rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+    const stopped = new Promise((r) => { rec.onstop = r; });
+
+    // Pegel-Analyse für automatische Stille-Erkennung
+    const src = audioCtx.createMediaStreamSource(s);
+    const an = audioCtx.createAnalyser();
+    an.fftSize = 1024;
+    src.connect(an);
+    const buf = new Uint8Array(an.fftSize);
+
+    const cfg = Object.assign({ stilleBeendetNachMs: 2500, maxDauerMs: 60000, keineSpracheAbbruchMs: 20000, lautstaerkeSchwelle: 0.035 }, config.sprechen);
+    const talk = $("talk"), label = $("talk-label"), bar = $("meter-bar"), selfAudio = document.querySelector(".self-audio span");
+
+    let reason = null;
+    const stop = (why) => { if (!reason) { reason = why; if (rec.state !== "inactive") rec.stop(); } };
+    call.stopRecording = stop;
+    call.activeRecording = { stop, name };
+
+    video.classList.add("fade");
+    label.textContent = "Du kannst jetzt sprechen …";
+    talk.hidden = false;
+    rec.start(1000);
+    const t0 = performance.now();
+    entry.aufnahmeStart = new Date().toISOString();
+
+    let noise = 0, noiseN = 0, threshold = cfg.lautstaerkeSchwelle;
+    let speechMs = 0, heard = false, lastLoud = t0, last = t0;
+    const loop = setInterval(() => {
+      const now = performance.now(), dt = now - last; last = now;
+      an.getByteTimeDomainData(buf);
+      let sum = 0;
+      for (let i = 0; i < buf.length; i++) { const v = (buf[i] - 128) / 128; sum += v * v; }
+      const rms = Math.sqrt(sum / buf.length);
+
+      // Die ersten 400 ms: Grundrauschen messen und Schwelle anpassen
+      if (now - t0 < 400) { noise += rms; noiseN++; return; }
+      if (noiseN) { threshold = Math.max(cfg.lautstaerkeSchwelle, (noise / noiseN) * 2.5); noiseN = 0; }
+
+      const lvl = Math.min(1, rms / (threshold * 3));
+      bar.style.width = (lvl * 100).toFixed(0) + "%";
+      if (selfAudio) selfAudio.style.setProperty("--lvl", lvl.toFixed(2));
+
+      if (rms > threshold) {
+        lastLoud = now; speechMs += dt;
+        if (speechMs > 300 && !heard) { heard = true; label.textContent = "Ich höre zu …"; }
+      }
+      const elapsed = now - t0;
+      if (heard && now - lastLoud > cfg.stilleBeendetNachMs) stop("stille");
+      else if (!heard && elapsed > cfg.keineSpracheAbbruchMs) stop("keine-sprache");
+      else if (elapsed > cfg.maxDauerMs) stop("max-dauer");
+    }, 50);
+
+    try {
+      await stopped;
+    } finally {
+      clearInterval(loop);
+      try { src.disconnect(); } catch (_) {}
+      talk.hidden = true;
+      bar.style.width = "0";
+      if (selfAudio) selfAudio.style.setProperty("--lvl", 0);
+      call && (call.stopRecording = null, call.activeRecording = null);
+    }
+
+    const blob = new Blob(chunks, { type: (rec.mimeType || mime || "").split(";")[0] || (kind + "/webm") });
+    const aborted = reason === "aufgelegt";
+    entry.aufnahmeEnde = new Date().toISOString();
+    entry.aufnahmeGrund = reason;
+    entry.sprachErkannt = heard;
+    entry.aufnahmeDatei = name + (aborted ? "_abgebrochen" : "");
+    upload(blob, entry.aufnahmeDatei, entry);
+
+    if (config.mikrofonNurBeimSprechen) releaseStream();
+    if (call && call.aborted) throw new Aborted();
+  }
+
+  // ------------------------------------------------------------------ Speichern
+  function upload(blob, name, entry) {
+    const id = call.id;
+    const p = (async () => {
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          const r = await fetch("api/upload", {
+            method: "POST",
+            headers: { "Content-Type": blob.type || "application/octet-stream", "X-Session": id, "X-Name": name },
+            body: blob,
+          });
+          if (r.ok) { const j = await r.json(); if (entry) entry.gespeichert = j.file; return true; }
+        } catch (e) { console.warn("Upload fehlgeschlagen, neuer Versuch …", e); }
+        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+      }
+      // Notlösung: Datei direkt im Browser herunterladen
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${id}_${name}.${blob.type.includes("mp4") ? "mp4" : "webm"}`;
+      a.click();
+      return false;
+    })();
+    call.uploads.push(p);
+    return p;
+  }
+
+  // ------------------------------------------------------------------ Ende
+  function hangUp(byUser) {
+    if (!call || call.ended) return;
+    call.aborted = byUser;
+    if (call.activeRecording) call.activeRecording.stop("aufgelegt");
+    // Ein Moment Zeit, damit die abgebrochene Aufnahme noch eingesammelt wird
+    setTimeout(() => {
+      call.abortHandlers.forEach((fn) => fn());
+      call.abortHandlers.clear();
+      finish(true);
+    }, call.activeRecording ? 300 : 0);
+  }
+
+  async function finish(byUser) {
+    if (!call || call.ended) return;
+    const c = call;
+    c.ended = true;
+    if (c.ring) c.ring.stop();
+    clearInterval(c.timer);
+    video.pause();
+    video.removeAttribute("src"); video.load();
+    $("placeholder").hidden = true;
+    $("talk").hidden = true;
+    releaseStream();
+    releaseWakeLock();
+    if (!byUser) hangupTone();
+
+    const duration = Date.now() - c.started;
+    $("end-duration").textContent = (byUser ? "Aufgelegt · " : "") + fmtTime(duration);
+    $("end-save").textContent = c.uploads.length ? "Aufnahmen werden gespeichert …" : "";
+    show("end");
+
+    c.log.anrufId = c.id;
+    c.log.beginn = new Date(c.started).toISOString();
+    c.log.dauerSekunden = Math.round(duration / 1000);
+    c.log.aufgelegt = byUser;
+    c.log.geraet = navigator.userAgent;
+
+    const results = await Promise.all(c.uploads);
+    if (c.uploads.length) $("end-save").textContent = results.every(Boolean) ? "Aufnahmen gespeichert ✓" : "Speichern teilweise fehlgeschlagen";
+    fetch("api/log", { method: "POST", headers: { "Content-Type": "application/json", "X-Session": c.id }, body: JSON.stringify(c.log, null, 2) }).catch(() => {});
+
+    await new Promise((r) => setTimeout(r, (config.endbildschirmSekunden ?? 6) * 1000));
+    $("call-timer").textContent = "00:00";
+    video.classList.remove("fade");
+    call = null;
+    show("start");
+  }
+
+  // ------------------------------------------------------------------ Töne (offline erzeugt)
+  function ringtone() {
+    const ctx = audioCtx;
+    const gain = ctx.createGain(); gain.gain.value = 0; gain.connect(ctx.destination);
+    const o1 = ctx.createOscillator(), o2 = ctx.createOscillator();
+    o1.frequency.value = 440; o2.frequency.value = 480;   // klassisches Freizeichen
+    o1.connect(gain); o2.connect(gain); o1.start(); o2.start();
+    let t = ctx.currentTime;
+    for (let i = 0; i < 20; i++) {                         // 1 s Ton, 2 s Pause
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.12, t + 0.03);
+      gain.gain.setValueAtTime(0.12, t + 1);
+      gain.gain.linearRampToValueAtTime(0, t + 1.03);
+      t += 3;
+    }
+    return { stop() { try { gain.gain.cancelScheduledValues(0); gain.gain.value = 0; o1.stop(); o2.stop(); gain.disconnect(); } catch (_) {} } };
+  }
+
+  function hangupTone() {
+    if (!audioCtx) return;
+    const ctx = audioCtx, g = ctx.createGain(), o = ctx.createOscillator();
+    o.frequency.value = 425; o.connect(g); g.connect(ctx.destination);
+    let t = ctx.currentTime;
+    g.gain.value = 0;
+    for (let i = 0; i < 3; i++) { g.gain.setValueAtTime(0.1, t); g.gain.setValueAtTime(0, t + 0.2); t += 0.4; }
+    o.start(); o.stop(t);
+  }
+
+  // ------------------------------------------------------------------ Bildschirm wach halten
+  let wakeLock = null;
+  async function requestWakeLock() { try { wakeLock = await navigator.wakeLock?.request("screen"); } catch (_) {} }
+  function releaseWakeLock() { try { wakeLock?.release(); } catch (_) {} wakeLock = null; }
+
+  // Doppeltipp-Zoom & Kontextmenü verhindern (Kiosk)
+  document.addEventListener("dblclick", (e) => e.preventDefault());
+  document.addEventListener("contextmenu", (e) => e.preventDefault());
+
+  init();
+})();
