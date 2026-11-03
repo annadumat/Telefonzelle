@@ -72,7 +72,17 @@
     console.log("Speicherort:", storeMode);
 
     if ("serviceWorker" in navigator && window.isSecureContext) {
-      navigator.serviceWorker.register("sw.js").catch((e) => console.warn("Service Worker:", e));
+      // Neue Version installiert → einmal neu laden, damit sofort aktuelle Videos/Config gelten
+      // (nicht während eines Anrufs; dann nach dem Auflegen).
+      const hadController = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (!hadController) return;            // erster Besuch: nichts Altes zu ersetzen
+        const reload = () => (call ? setTimeout(reload, 2000) : location.reload());
+        reload();
+      });
+      navigator.serviceWorker.register("sw.js", { updateViaCache: "none" })
+        .then((reg) => reg.update())
+        .catch((e) => console.warn("Service Worker:", e));
     }
     if (!window.isSecureContext) {
       showError("Achtung: Diese Seite ist nicht über HTTPS/localhost geöffnet – der Browser blockiert das Mikrofon. " +
