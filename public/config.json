@@ -1,0 +1,28 @@
+{
+  "anrufer": {
+    "name": "Mira",
+    "untertitel": "Anruf aus dem Jahr 2075",
+    "bild": "avatar.svg"
+  },
+
+  "aufnahme": "audio",
+
+  "klingelnSekunden": 4,
+  "platzhalterSekunden": 5,
+  "mikrofonNurBeimSprechen": false,
+
+  "sprechen": {
+    "stilleBeendetNachMs": 2500,
+    "maxDauerMs": 60000,
+    "keineSpracheAbbruchMs": 20000,
+    "lautstaerkeSchwelle": 0.035
+  },
+
+  "ablauf": [
+    { "video": "videos/01_begruessung_frage1.mp4", "danachAufnehmen": true,  "aufnahmeName": "01_antwort" },
+    { "video": "videos/02_reaktion_frage2.mp4",    "danachAufnehmen": true,  "aufnahmeName": "02_antwort" },
+    { "video": "videos/03_verabschiedung.mp4",     "danachAufnehmen": false }
+  ],
+
+  "endbildschirmSekunden": 6
+}
