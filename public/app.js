@@ -56,6 +56,7 @@
     const a = config.anrufer || {};
     for (const id of ["start-avatar", "ring-avatar", "end-avatar"]) if (a.bild) $(id).src = a.bild;
     $("start-name").textContent = $("ring-name").textContent = $("call-name").textContent = a.name || "Unbekannt";
+    $("listen-label").textContent = (a.name || "") + " hört zu …";
     $("start-sub").textContent = a.untertitel || "";
 
     $("btn-call").addEventListener("click", startCall);
@@ -104,7 +105,7 @@
 
   function tickClock() {
     const d = new Date();
-    $("clock").textContent = pad(d.getHours()) + ":" + pad(d.getMinutes()) + " · " + (d.getFullYear() + 49);
+    $("clock").textContent = pad(d.getHours()) + ":" + pad(d.getMinutes()) + " · " + (config.jahr || d.getFullYear());
   }
 
   function showError(msg) { const e = $("start-error"); e.textContent = msg; e.hidden = false; }
@@ -202,14 +203,15 @@
 
   /** Spielt ein Video ab. Fehlt die Datei, wird ein Platzhalter angezeigt. Gibt true zurück, wenn Platzhalter. */
   async function playVideo(src) {
-    video.classList.remove("fade");
+    showListening(false);
     const ok = await guard(new Promise((resolve) => {
       let done = false;
       const fin = (v) => { if (!done) { done = true; cleanup(); resolve(v); } };
       const onEnd = () => fin(true);
       const onErr = () => fin(false);
-      const cleanup = () => { video.removeEventListener("ended", onEnd); video.removeEventListener("error", onErr); };
+      const cleanup = () => { video.removeEventListener("ended", onEnd); video.removeEventListener("error", onErr); video.removeEventListener("timeupdate", captureFrame); };
       video.addEventListener("ended", onEnd);
+      video.addEventListener("timeupdate", captureFrame);
       video.addEventListener("error", onErr);
       if (video.error || !video.src.endsWith(src)) video.src = src;
       video.currentTime = 0;
@@ -233,6 +235,27 @@
       for (let s = secs; s > 0; s--) { $("ph-count").textContent = s; await wait(1000); }
     } finally { ph.hidden = true; }
     return true;
+  }
+
+  /** Nimmt einmal pro Video ein Standbild (bei ~1,5 s) als runden Avatar für die Zuhören-Ansicht. */
+  let captured = "";
+  function captureFrame() {
+    if (video.currentTime < 1.5 || captured === video.currentSrc || !video.videoWidth) return;
+    captured = video.currentSrc;
+    try {
+      const w = video.videoWidth, h = video.videoHeight;
+      const size = Math.round(Math.min(w, h) * 0.55);          // Ausschnitt um den Kopf (Bildmitte, oberes Drittel)
+      const sx = Math.round((w - size) / 2), sy = Math.round(h * 0.04);
+      const c = document.createElement("canvas");
+      c.width = c.height = 360;
+      c.getContext("2d").drawImage(video, sx, sy, size, size, 0, 0, 360, 360);
+      $("listen-avatar").src = c.toDataURL("image/jpeg", 0.85);
+    } catch (e) { console.warn("Standbild nicht möglich", e); }
+  }
+
+  function showListening(on) {
+    $("listening").hidden = !on;
+    video.style.opacity = on ? "0" : "1";
   }
 
   // ------------------------------------------------------------------ Aufnahme
@@ -271,7 +294,7 @@
     call.stopRecording = stop;
     call.activeRecording = { stop, name };
 
-    video.classList.add("fade");
+    showListening(true);
     label.textContent = "Du kannst jetzt sprechen …";
     talk.hidden = false;
     rec.start(1000);
@@ -422,7 +445,7 @@
 
     await new Promise((r) => setTimeout(r, (config.endbildschirmSekunden ?? 6) * 1000));
     $("call-timer").textContent = "00:00";
-    video.classList.remove("fade");
+    showListening(false);
     call = null;
     show("start");
   }

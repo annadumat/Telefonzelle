@@ -48,6 +48,12 @@
     <video id="video" playsinline webkit-playsinline preload="auto"></video>
 
     <!-- erscheint, wenn eine Videodatei (noch) fehlt -->
+    <!-- während man spricht: Avatar "hört zu" (Standbild aus dem Video) -->
+    <div id="listening" hidden>
+      <div class="avatar-ring listen"><img class="avatar" id="listen-avatar" src="avatar.svg" alt=""></div>
+      <p id="listen-label">hört zu …</p>
+    </div>
+
     <div id="placeholder" hidden>
       <div class="ph-box">
         <div class="ph-title">Platzhalter</div>

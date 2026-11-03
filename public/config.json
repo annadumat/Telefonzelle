@@ -1,13 +1,15 @@
 {
+  "jahr": 2035,
+
   "anrufer": {
     "name": "Mira",
-    "untertitel": "Anruf aus dem Jahr 2075",
+    "untertitel": "Anruf aus dem Jahr 2035",
     "bild": "avatar.svg"
   },
 
   "aufnahme": "audio",
   "speichern": "auto",
-  "adminPin": "2075",
+  "adminPin": "2035",
 
   "klingelnSekunden": 4,
   "platzhalterSekunden": 5,
@@ -21,9 +23,9 @@
   },
 
   "ablauf": [
-    { "video": "videos/01_begruessung_frage1.mp4", "danachAufnehmen": true,  "aufnahmeName": "01_antwort" },
-    { "video": "videos/02_reaktion_frage2.mp4",    "danachAufnehmen": true,  "aufnahmeName": "02_antwort" },
-    { "video": "videos/03_verabschiedung.mp4",     "danachAufnehmen": false }
+    { "video": "videos/video_3_final.mp4", "danachAufnehmen": true,  "aufnahmeName": "01_antwort" },
+    { "video": "videos/video_3_final.mp4",    "danachAufnehmen": true,  "aufnahmeName": "02_antwort" },
+    { "video": "videos/video_3_final.mp4",     "danachAufnehmen": false }
   ],
 
   "endbildschirmSekunden": 6
