@@ -320,7 +320,9 @@
     const buf = new Uint8Array(an.fftSize);
 
     const cfg = Object.assign({ stilleBeendetNachMs: 2500, maxDauerMs: 60000, keineSpracheAbbruchMs: 20000, lautstaerkeSchwelle: 0.035 }, config.sprechen);
-    const talk = $("talk"), label = $("talk-label"), bar = $("meter-bar"), selfAudio = document.querySelector(".self-audio span");
+    const talk = $("talk"), label = $("talk-label"), bar = $("meter-bar"), self = $("self");
+    let smooth = 0, speakingUntil = 0;
+    self.classList.add("live");
 
     let reason = null;
     const stop = (why) => { if (!reason) { reason = why; if (rec.state !== "inactive") rec.stop(); } };
@@ -348,13 +350,16 @@
       if (noiseN) { threshold = Math.max(cfg.lautstaerkeSchwelle, (noise / noiseN) * 2.5); noiseN = 0; }
 
       const lvl = Math.min(1, rms / (threshold * 3));
+      smooth = lvl > smooth ? lvl : smooth * 0.85;          // schnell rauf, sanft runter
       bar.style.width = (lvl * 100).toFixed(0) + "%";
-      if (selfAudio) selfAudio.style.setProperty("--lvl", lvl.toFixed(2));
+      self.style.setProperty("--lvl", smooth.toFixed(2));
 
       if (rms > threshold) {
+        speakingUntil = now + 300;                          // kurz nachleuchten, damit es nicht flackert
         lastLoud = now; speechMs += dt;
         if (speechMs > 300 && !heard) { heard = true; label.textContent = "Ich höre zu …"; }
       }
+      self.classList.toggle("speaking", now < speakingUntil);
       const elapsed = now - t0;
       if (heard && now - lastLoud > cfg.stilleBeendetNachMs) stop("stille");
       else if (!heard && elapsed > cfg.keineSpracheAbbruchMs) stop("keine-sprache");
@@ -368,7 +373,8 @@
       try { src.disconnect(); } catch (_) {}
       talk.hidden = true;
       bar.style.width = "0";
-      if (selfAudio) selfAudio.style.setProperty("--lvl", 0);
+      self.classList.remove("live", "speaking");
+      self.style.setProperty("--lvl", 0);
       call && (call.stopRecording = null, call.activeRecording = null);
     }
 
