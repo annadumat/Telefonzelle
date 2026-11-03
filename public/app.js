@@ -66,6 +66,7 @@
     // Videos im Voraus laden, damit es später nicht ruckelt
     (config.ablauf || []).forEach((s) => { const l = document.createElement("link"); l.rel = "prefetch"; l.href = s.video; document.head.appendChild(l); });
 
+    if (await healIfOutdated()) return;
     tickClock(); setInterval(tickClock, 10000);
     setupAdminGesture();
     storeMode = await detectStoreMode();
@@ -88,6 +89,24 @@
       showError("Achtung: Diese Seite ist nicht über HTTPS/localhost geöffnet – der Browser blockiert das Mikrofon. " +
                 "Server mit  python3 server.py --https  starten und die https://-Adresse öffnen.");
     }
+  }
+
+  /** Liegt online eine neuere Version, Cache leeren und einmal neu laden (Aufnahmen bleiben). */
+  async function healIfOutdated() {
+    if (!navigator.onLine) return false;
+    try {
+      const ctl = new AbortController();
+      setTimeout(() => ctl.abort(), 2500);
+      const t = await (await fetch("version.js?check=" + Date.now(), { cache: "no-store", signal: ctl.signal })).text();
+      const m = /TZ_VERSION\s*=\s*"([^"]+)"/.exec(t);
+      if (!m || m[1] === window.TZ_VERSION) return false;
+      if (sessionStorage.getItem("tz-heal") === m[1]) return false;   // nur einmal versuchen
+      sessionStorage.setItem("tz-heal", m[1]);
+      console.log("Neue Version", m[1], "gefunden (läuft:", window.TZ_VERSION, ") – lade neu");
+      await TZStore.resetApp();
+      location.reload();
+      return true;
+    } catch (_) { return false; }
   }
 
   async function detectStoreMode() {

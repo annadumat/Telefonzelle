@@ -66,7 +66,7 @@
   </div>
 
   <header>
-    <h1>Telefonzelle · Aufnahmen</h1>
+    <h1>Telefonzelle · Aufnahmen <small id="version" style="font-size:14px;color:var(--muted);font-weight:400"></small></h1>
     <a class="btn" href="./">← Zurück zum Anruf</a>
   </header>
 
@@ -113,6 +113,7 @@
   <h2>Offline</h2>
   <div class="actions">
     <button id="btn-refresh">Videos &amp; Seite neu laden (braucht Internet)</button>
+    <button id="btn-reset">App zurücksetzen (Aufnahmen bleiben)</button>
   </div>
   <div class="panel" id="refresh-panel" hidden>
     <div id="refresh-info"></div>
@@ -123,7 +124,8 @@
   <h2>Anrufe im Browser</h2>
   <div id="calls"><p class="empty">Lade …</p></div>
 
-  <script src="storage.js"></script>
-  <script src="admin.js"></script>
+  <script src="version.js?v=5"></script>
+  <script src="storage.js?v=5"></script>
+  <script src="admin.js?v=5"></script>
 </body>
 </html>

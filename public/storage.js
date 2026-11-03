@@ -128,5 +128,11 @@ window.TZStore = (() => {
     return new Blob([...parts, ...central, end.buffer], { type: "application/zip" });
   }
 
-  return { saveRecording, saveLog, listRecordings, listLogs, blobOf, markExported, deleteRecordings, deleteLogs, makeZip, extFor };
+  /** Löscht Offline-Cache und Service Worker (NICHT die Aufnahmen in IndexedDB). */
+  async function resetApp() {
+    try { for (const k of await caches.keys()) await caches.delete(k); } catch (_) {}
+    try { for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister(); } catch (_) {}
+  }
+
+  return { resetApp, saveRecording, saveLog, listRecordings, listLogs, blobOf, markExported, deleteRecordings, deleteLogs, makeZip, extFor };
 })();
