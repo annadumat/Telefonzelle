@@ -41,6 +41,8 @@
     .tag { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: #24304f; color: var(--muted); }
     .tag.new { background: rgba(48, 209, 88, .18); color: var(--green); }
     .rec button { padding: 8px 12px; font-size: 14px; }
+    .call-head .del { padding: 6px 12px; font-size: 14px; margin-left: 10px; }
+    .call-head .right { display: flex; align-items: center; }
     .empty { color: var(--muted); padding: 20px 0; }
     .files { display: flex; flex-wrap: wrap; gap: 6px; }
     .files a { font-size: 13px; color: var(--accent); text-decoration: none; padding: 4px 10px; border: 1px solid var(--line); border-radius: 99px; }
@@ -122,10 +124,11 @@
   <p class="note">Nach dem Austauschen von Videos oder der config.json einmal mit Internet hier tippen.</p>
 
   <h2>Anrufe im Browser</h2>
+  <div class="actions" style="margin:0 0 12px"><button class="danger" id="btn-del-empty" hidden></button></div>
   <div id="calls"><p class="empty">Lade …</p></div>
 
-  <script src="version.js?v=6"></script>
-  <script src="storage.js?v=6"></script>
-  <script src="admin.js?v=6"></script>
+  <script src="version.js?v=7"></script>
+  <script src="storage.js?v=7"></script>
+  <script src="admin.js?v=7"></script>
 </body>
 </html>
