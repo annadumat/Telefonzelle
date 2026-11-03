@@ -148,10 +148,14 @@
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
     audioCtx.resume();
     const first = config.ablauf[0];
-    video.muted = false;
+    // Video im Klick einmal stumm starten und sofort anhalten: Das gibt es für späteres
+    // Abspielen mit Ton frei (iOS), ohne dass während des Klingelns etwas zu hören ist.
+    video.muted = true;
     video.src = first.video;
     const unlock = video.play();
-    if (unlock) unlock.then(() => video.pause()).catch(() => {});
+    video.pause();
+    if (unlock) unlock.catch(() => {});
+    video.muted = false;
 
     call = {
       id: sessionId(),
