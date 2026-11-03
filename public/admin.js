@@ -122,7 +122,30 @@
     renderCalls();
   }
 
+  function emptySessions() {
+    const withRec = new Set(recs.map((r) => r.session));
+    return logs.map((l) => l.session).filter((s) => !withRec.has(s));
+  }
+
+  async function deleteCall(session) {
+    const own = recs.filter((r) => r.session === session);
+    const fresh = own.filter((r) => !r.exported).length;
+    const msg = fresh
+      ? `Achtung: ${fresh} Aufnahme(n) dieses Anrufs wurden noch NICHT exportiert und gehen verloren.\n\nAnruf vom ${fmtSession(session)} trotzdem löschen?`
+      : `Anruf vom ${fmtSession(session)}${own.length ? ` mit ${own.length} Aufnahme(n)` : ""} löschen?`;
+    if (!confirm(msg)) return;
+    await S.deleteRecordings(own.map((r) => r.id));
+    await S.deleteLogs([session]);
+    prepared = null; $("export-panel").hidden = true;
+    await load();
+  }
+
   function renderCalls() {
+    const empty = emptySessions();
+    const btn = $("btn-del-empty");
+    btn.hidden = !empty.length;
+    btn.textContent = `Anrufe ohne Aufnahme löschen (${empty.length})`;
+
     urls.splice(0).forEach((u) => URL.revokeObjectURL(u));
     const box = $("calls");
     const sessions = [...new Set([...recs.map((r) => r.session), ...logs.map((l) => l.session)])].sort().reverse();
@@ -133,8 +156,11 @@
       const div = document.createElement("div");
       div.className = "call";
       const dur = log.dauerSekunden != null ? `${Math.floor(log.dauerSekunden / 60)}:${pad(log.dauerSekunden % 60)} min` : "";
-      div.innerHTML = `<div class="call-head"><strong>${fmtSession(s)}</strong><small>${dur}${log.aufgelegt ? " · aufgelegt" : ""}</small></div>`;
-      for (const r of recs.filter((x) => x.session === s)) {
+      const own = recs.filter((x) => x.session === s);
+      div.innerHTML = `<div class="call-head"><strong>${fmtSession(s)}</strong><span class="right"><small>${dur}${log.aufgelegt ? " · aufgelegt" : ""}</small><button class="danger del">Löschen</button></span></div>`;
+      div.querySelector(".del").onclick = () => deleteCall(s);
+      if (!own.length) div.insertAdjacentHTML("beforeend", '<p class="note">Keine Aufnahme (vor der ersten Antwort aufgelegt).</p>');
+      for (const r of own) {
         const row = document.createElement("div");
         row.className = "rec";
         const url = URL.createObjectURL(S.blobOf(r)); urls.push(url);
@@ -208,6 +234,13 @@
       if (prepared && confirm("Wurde die ZIP-Datei gespeichert? Dann als exportiert markieren.")) { await S.markExported(prepared.ids); await load(); }
     }, 1200);
   });
+  $("btn-del-empty").onclick = async () => {
+    const empty = emptySessions();
+    if (!empty.length || !confirm(`${empty.length} Anruf(e) ohne Aufnahme aus der Liste löschen?`)) return;
+    await S.deleteLogs(empty);
+    await load();
+  };
+
   $("btn-del-exported").onclick = async () => {
     const ex = recs.filter((r) => r.exported);
     if (!ex.length) return;
