@@ -142,6 +142,7 @@ Tipps:
 | `sprechen.lautstaerkeSchwelle` | ab welchem Pegel „Sprechen“ erkannt wird (passt sich zusätzlich ans Grundrauschen an) |
 | `mikrofonDauerhaftOffen` | `true`: Mikrofon bleibt nach dem ersten Erlauben offen, damit das iPad nicht bei jedem Anruf neu fragt (aufgenommen wird nur in den Sprechphasen) |
 | `mikrofonNurBeimSprechen` | `true`, falls auf iPhones der Videoton bei aktivem Mikrofon zu leise wird |
+| `standbildDatei` | festes Bild für das runde Standbild während man spricht (z. B. `melo.jpg`); leer lassen = automatisch aus dem Video |
 | `standbild` | Ausschnitt für das runde Standbild während man spricht: `mitteX` (horizontale Mitte des Kopfes, 0–1), `obenY` (oberer Rand, 0–1), `groesse` (Anteil der Videohöhe) |
 | `ablauf` | Liste der Videos; `danachAufnehmen: true` = danach darf gesprochen werden; `frage` = Text, der während der Aufnahme eingeblendet wird |
 

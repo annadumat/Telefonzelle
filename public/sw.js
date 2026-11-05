@@ -3,7 +3,7 @@
  * - Videos: aus dem Cache (mit Range-Unterstützung, die Safari für Videos braucht)
  * - /api/…: nie cachen (nur relevant, wenn server.py benutzt wird)
  */
-const CACHE = "telefonzelle-v14";
+const CACHE = "telefonzelle-v15";
 const APP_FILES = [
   "./", "index.html", "version.js", "style.css", "app.js", "storage.js", "config.json", "avatar.svg",
   "admin.html", "admin.js", "manifest.webmanifest", "icon-512.png", "apple-touch-icon.png",
@@ -15,6 +15,7 @@ async function mediaFiles() {
     const c = await r.json();
     const list = (c.ablauf || []).map((s) => s.video);
     if (c.anrufer && c.anrufer.bild) list.push(c.anrufer.bild);
+    if (c.standbildDatei) list.push(c.standbildDatei);
     return list;
   } catch (_) { return []; }
 }
@@ -69,6 +70,7 @@ async function mediaFilesCached(cache) {
     const c = await r.json();
     const list = (c.ablauf || []).map((s) => s.video);
     if (c.anrufer && c.anrufer.bild) list.push(c.anrufer.bild);
+    if (c.standbildDatei) list.push(c.standbildDatei);
     return list;
   } catch (_) { return []; }
 }
