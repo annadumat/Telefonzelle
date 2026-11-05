@@ -187,7 +187,8 @@
   }
 
   async function getStream() {
-    if (stream && stream.getTracks().some((t) => t.readyState === "live")) return stream;
+    if (stream && stream.getTracks().every((t) => t.readyState === "live")) return stream;
+    if (stream) releaseStream();   // z. B. von iOS beendet → neu anfordern
     const wantVideo = config.aufnahme === "video";
     stream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
@@ -461,7 +462,9 @@
     video.removeAttribute("src"); video.load();
     $("placeholder").hidden = true;
     $("talk").hidden = true;
-    releaseStream();
+    // Mikrofon offen lassen, damit iOS beim nächsten Anruf nicht erneut um Erlaubnis fragt.
+    // (Aufgenommen wird nur in den Sprechphasen.) Abschaltbar mit "mikrofonDauerhaftOffen": false.
+    if (config.mikrofonDauerhaftOffen === false || config.mikrofonNurBeimSprechen) releaseStream();
     releaseWakeLock();
     if (!byUser) hangupTone();
 
