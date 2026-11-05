@@ -23,11 +23,13 @@
   },
 
   "ablauf": [
-    { "video": "videos/video_3_final.mp4", "danachAufnehmen": true,  "aufnahmeName": "01_antwort" },
-    { "video": "videos/video_3_final.mp4", "danachAufnehmen": true,  "aufnahmeName": "02_antwort" },
-    { "video": "videos/video_3_final.mp4", "danachAufnehmen": true,  "aufnahmeName": "03_antwort" },
-    { "video": "videos/video_3_final.mp4", "danachAufnehmen": false }
+    { "video": "videos/telefonzelle_2.mp4", "danachAufnehmen": true,  "aufnahmeName": "01_antwort" },
+    { "video": "videos/telefonzelle_2.mp4", "danachAufnehmen": true,  "aufnahmeName": "02_antwort" },
+    { "video": "videos/telefonzelle_2.mp4", "danachAufnehmen": true,  "aufnahmeName": "03_antwort" },
+    { "video": "videos/telefonzelle_2.mp4", "danachAufnehmen": false }
   ],
+
+  "standbild": { "mitteX": 0.47, "obenY": 0.0, "groesse": 0.6 },
 
   "endbildschirmSekunden": 5
 }

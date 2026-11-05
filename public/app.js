@@ -277,8 +277,11 @@
     captured = video.currentSrc;
     try {
       const w = video.videoWidth, h = video.videoHeight;
-      const size = Math.round(Math.min(w, h) * 0.55);          // Ausschnitt um den Kopf (Bildmitte, oberes Drittel)
-      const sx = Math.round((w - size) / 2), sy = Math.round(h * 0.04);
+      // Ausschnitt um den Kopf, einstellbar in config.json → "standbild" (Anteile der Videogröße)
+      const sb = Object.assign({ mitteX: 0.5, obenY: 0.04, groesse: 0.55 }, config.standbild);
+      const size = Math.round(Math.min(w, h) * sb.groesse);
+      const sx = Math.max(0, Math.min(w - size, Math.round(w * sb.mitteX - size / 2)));
+      const sy = Math.max(0, Math.min(h - size, Math.round(h * sb.obenY)));
       const c = document.createElement("canvas");
       c.width = c.height = 360;
       c.getContext("2d").drawImage(video, sx, sy, size, size, 0, 0, 360, 360);
