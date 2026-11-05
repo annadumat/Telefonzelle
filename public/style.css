@@ -105,6 +105,16 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 }
 #listening[hidden] { display: none; }
 #listening p { color: var(--muted); font-size: clamp(17px, 2.4vw, 22px); }
+#listening.has-question { gap: 14px; }
+#listening.has-question .avatar-ring { width: clamp(110px, 15vw, 160px); margin-bottom: 4px; }
+#listening .question {
+  max-width: min(760px, 88vw); margin-top: 8px; padding: 18px 26px;
+  color: var(--fg); font-size: clamp(20px, 2.7vw, 30px); font-weight: 500; line-height: 1.35;
+  text-align: center; text-wrap: balance;
+  background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .12); border-radius: 18px;
+}
+#listening .question[hidden] { display: none; }
+@media (max-height: 520px) { #listening .question { font-size: 18px; padding: 10px 16px; } }
 .avatar-ring.listen { animation: listen 2.6s ease-in-out infinite; }
 @keyframes listen { 50% { box-shadow: 0 0 90px rgba(110, 231, 255, .45); transform: scale(1.03); } }
 @keyframes fadein { from { opacity: 0; } }

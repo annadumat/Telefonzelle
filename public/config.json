@@ -24,9 +24,12 @@
   },
 
   "ablauf": [
-    { "video": "videos/01_melo.mp4", "danachAufnehmen": true,  "aufnahmeName": "01_antwort" },
-    { "video": "videos/02_melo.mp4", "danachAufnehmen": true,  "aufnahmeName": "02_antwort" },
-    { "video": "videos/03_melo.mp4", "danachAufnehmen": true,  "aufnahmeName": "03_antwort" },
+    { "video": "videos/01_melo.mp4", "danachAufnehmen": true,  "aufnahmeName": "01_antwort",
+      "frage": "Welche Technologie ist 2036 aus unserem Alltag nicht mehr wegzudenken? Wie nutzen wir sie und was hat sie verändert?" },
+    { "video": "videos/02_melo.mp4", "danachAufnehmen": true,  "aufnahmeName": "02_antwort",
+      "frage": "Auf welche Weise haben Unternehmen aus Deutschland diese Technologie entscheidend vorangebracht?" },
+    { "video": "videos/03_melo.mp4", "danachAufnehmen": true,  "aufnahmeName": "03_antwort",
+      "frage": "Wenn du den Unternehmen im Jahr 2026 eine einzige Botschaft mitgeben könntest, welche wäre das?" },
     { "video": "videos/04_melo.mp4", "danachAufnehmen": false }
   ],
 

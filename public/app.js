@@ -233,7 +233,7 @@
       entry.platzhalter = await playVideo(step.video);
 
       if (step.danachAufnehmen) {
-        await recordAnswer(step.aufnahmeName || `${pad(i + 1)}_antwort`, entry);
+        await recordAnswer(step.aufnahmeName || `${pad(i + 1)}_antwort`, entry, step.frage);
       }
     }
     await finish(false);
@@ -308,7 +308,12 @@
     return candidates.find((m) => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) || "";
   }
 
-  async function recordAnswer(name, entry) {
+  async function recordAnswer(name, entry, frage) {
+    // Frage einblenden, die gerade beantwortet werden soll
+    const q = $("listen-question");
+    q.textContent = frage || "";
+    q.hidden = !frage;
+    $("listening").classList.toggle("has-question", !!frage);
     const s = await guard(getStream());
     const kind = config.aufnahme === "video" ? "video" : "audio";
     const recStream = kind === "video" ? s : new MediaStream(s.getAudioTracks());
