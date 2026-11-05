@@ -10,7 +10,7 @@
   <title>Anruf in die Zukunft</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="style.css?v=15">
+  <link rel="stylesheet" href="style.css?v=16">
 </head>
 <body>
 
@@ -18,7 +18,7 @@
   <section id="screen-start" class="screen active">
     <div class="clock" id="clock">--:--</div>
     <div class="contact">
-      <div class="avatar-ring"><img class="avatar" id="start-avatar" src="avatar.svg" alt=""></div>
+      <div class="avatar-ring"><img class="avatar" id="start-avatar" src="melo.jpg" alt=""></div>
       <h1 id="start-name">…</h1>
       <p id="start-sub">…</p>
     </div>
@@ -34,7 +34,7 @@
   <!-- 2) Verbinden / Klingeln -->
   <section id="screen-ringing" class="screen">
     <div class="contact">
-      <div class="avatar-ring pulse"><img class="avatar" id="ring-avatar" src="avatar.svg" alt=""></div>
+      <div class="avatar-ring pulse"><img class="avatar" id="ring-avatar" src="melo.jpg" alt=""></div>
       <h1 id="ring-name">…</h1>
       <p class="status" id="ring-status">Verbindung durch die Zeit wird aufgebaut …</p>
     </div>
@@ -50,7 +50,7 @@
     <!-- erscheint, wenn eine Videodatei (noch) fehlt -->
     <!-- während man spricht: Avatar "hört zu" (Standbild aus dem Video) -->
     <div id="listening" hidden>
-      <div class="avatar-ring listen"><img class="avatar" id="listen-avatar" src="avatar.svg" alt=""></div>
+      <div class="avatar-ring listen"><img class="avatar" id="listen-avatar" src="melo.jpg" alt=""></div>
       <p id="listen-label">hört zu …</p>
       <p id="listen-question" class="question" hidden></p>
     </div>
@@ -92,14 +92,14 @@
   <!-- 4) Ende -->
   <section id="screen-end" class="screen">
     <div class="contact">
-      <div class="avatar-ring dim"><img class="avatar" id="end-avatar" src="avatar.svg" alt=""></div>
+      <div class="avatar-ring dim"><img class="avatar" id="end-avatar" src="melo.jpg" alt=""></div>
       <h1>Anruf beendet</h1>
       <p class="status" id="end-duration"></p>
     </div>
   </section>
 
-  <script src="version.js?v=15"></script>
-  <script src="storage.js?v=15"></script>
-  <script src="app.js?v=15"></script>
+  <script src="version.js?v=16"></script>
+  <script src="storage.js?v=16"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>
