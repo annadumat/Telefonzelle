@@ -11,7 +11,7 @@
   "speichern": "auto",
   "adminPin": "2036",
 
-  "klingelnSekunden": 4,
+  "klingelnAnzahl": 3,
   "platzhalterSekunden": 5,
   "mikrofonNurBeimSprechen": false,
   "mikrofonDauerhaftOffen": true,
