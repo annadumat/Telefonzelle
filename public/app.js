@@ -57,6 +57,7 @@
     for (const id of ["start-avatar", "ring-avatar", "end-avatar"]) if (a.bild) $(id).src = a.bild;
     $("start-name").textContent = $("ring-name").textContent = $("call-name").textContent = a.name || "Unbekannt";
     $("listen-label").textContent = (a.name || "") + " hört zu …";
+    if (config.standbildDatei) $("listen-avatar").src = config.standbildDatei;
     $("start-sub").textContent = a.untertitel || "";
 
     $("btn-call").addEventListener("click", startCall);
@@ -278,6 +279,7 @@
   /** Nimmt einmal pro Video ein Standbild (bei ~1,5 s) als runden Avatar für die Zuhören-Ansicht. */
   let captured = "";
   function captureFrame() {
+    if (config.standbildDatei) return;   // festes Bild aus config.json statt automatischem Standbild
     if (video.currentTime < 1.5 || captured === video.currentSrc || !video.videoWidth) return;
     captured = video.currentSrc;
     try {

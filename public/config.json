@@ -33,6 +33,7 @@
     { "video": "videos/04_melo.mp4", "danachAufnehmen": false }
   ],
 
+  "standbildDatei": "melo.jpg",
   "standbild": { "mitteX": 0.515, "obenY": 0.0, "groesse": 0.6 },
 
   "endbildschirmSekunden": 5
