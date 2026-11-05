@@ -49,7 +49,7 @@ läuft ohne Internet. Die Aufnahmen bleiben auf dem iPad, bis du sie exportierst
 ### Aufnahmen exportieren
 
 - Auf dem Startbildschirm **5× schnell auf die Uhrzeit oben tippen** → Export-Seite
-  (PIN: `2035`, änderbar in `config.json` → `adminPin`).
+  (PIN: `2036`, änderbar in `config.json` → `adminPin`).
 - **„Neue exportieren“** → **„Teilen / AirDrop / In Dateien sichern“**. Du bekommst eine
   ZIP-Datei mit einem Ordner pro Anruf (Aufnahmen + `anruf.json`).
 - Danach sind die Aufnahmen als *exportiert* markiert. **„Exportierte löschen“** gibt
@@ -136,7 +136,7 @@ Tipps:
 | `adminPin` | PIN für die Export-Seite (`""` = keine PIN) |
 | `klingelnSekunden` | wie lange es vor dem „Abnehmen“ klingelt |
 | `platzhalterSekunden` | Dauer des Platzhalters, wenn ein Video fehlt |
-| `sprechen.stilleBeendetNachMs` | so lange Stille nach dem Sprechen → Aufnahme endet |
+| `sprechen.stilleBeendetNachMs` | so lange Stille nach dem Sprechen → Aufnahme endet; `0` = aus, dann nur per Knopf „Fertig gesprochen“ |
 | `sprechen.maxDauerMs` | maximale Länge einer Antwort |
 | `sprechen.keineSpracheAbbruchMs` | sagt jemand gar nichts, geht es nach dieser Zeit weiter |
 | `sprechen.lautstaerkeSchwelle` | ab welchem Pegel „Sprechen“ erkannt wird (passt sich zusätzlich ans Grundrauschen an) |

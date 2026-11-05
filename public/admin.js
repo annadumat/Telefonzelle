@@ -15,13 +15,13 @@
   async function checkPin() {
     let pin = "";
     try { pin = String((await (await fetch("config.json")).json()).adminPin || ""); } catch (_) {}
-    if (!pin || sessionStorage.getItem("tz-admin") === "1") return;
+    if (!pin) return;   // PIN wird bei jedem Öffnen der Export-Seite abgefragt
     $("pin").hidden = false;
     $("pin-input").focus();
     await new Promise((resolve) => {
       $("pin-form").addEventListener("submit", (e) => {
         e.preventDefault();
-        if ($("pin-input").value === pin) { sessionStorage.setItem("tz-admin", "1"); $("pin").hidden = true; resolve(); }
+        if ($("pin-input").value === pin) { $("pin-input").value = ""; $("pin").hidden = true; resolve(); }
         else { $("pin-msg").textContent = "Falsche PIN"; $("pin-input").value = ""; }
       });
     });
@@ -300,6 +300,9 @@
     await S.resetApp();
     location.href = "./";
   };
+
+  // Kommt die Seite aus dem Zurück-Cache des Browsers, Seite neu laden → PIN erneut abfragen
+  window.addEventListener("pageshow", (e) => { if (e.persisted) location.reload(); });
 
   checkPin().then(() => { showLastSave(); loadServer(); return load(); }).catch((e) => { console.error(e); $("calls").innerHTML = `<p class="empty">Fehler: ${e.message}</p>`; });
 })();

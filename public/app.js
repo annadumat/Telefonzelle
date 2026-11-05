@@ -357,11 +357,15 @@
       if (rms > threshold) {
         speakingUntil = now + 300;                          // kurz nachleuchten, damit es nicht flackert
         lastLoud = now; speechMs += dt;
-        if (speechMs > 300 && !heard) { heard = true; label.textContent = "Ich höre zu …"; }
+        if (speechMs > 300 && !heard) {
+          heard = true;
+          label.textContent = cfg.stilleBeendetNachMs > 0 ? "Ich höre zu …" : "Tippe auf „Fertig gesprochen“, wenn du fertig bist";
+        }
       }
       self.classList.toggle("speaking", now < speakingUntil);
       const elapsed = now - t0;
-      if (heard && now - lastLoud > cfg.stilleBeendetNachMs) stop("stille");
+      // stilleBeendetNachMs = 0: kein automatisches Weiter nach Stille, nur per Knopf
+      if (heard && cfg.stilleBeendetNachMs > 0 && now - lastLoud > cfg.stilleBeendetNachMs) stop("stille");
       else if (!heard && elapsed > cfg.keineSpracheAbbruchMs) stop("keine-sprache");
       else if (elapsed > cfg.maxDauerMs) stop("max-dauer");
     }, 50);
