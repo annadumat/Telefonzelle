@@ -110,7 +110,7 @@ Fällt der Server während eines Anrufs aus, speichert die Seite auf dem Gerät
 ## Eigene Videos einsetzen
 
 Videos nach `public/videos/` legen und in `public/config.json` eintragen. Die
-mitgelieferte Datei `video_3_final.mp4` dient vorerst als Platzhalter für alle drei Schritte. Fehlt eine Datei, zeigt die Seite einen
+mitgelieferte Datei `telefonzelle_2.mp4` dient vorerst als Platzhalter für alle vier Schritte. Fehlt eine Datei, zeigt die Seite einen
 Platzhalter-Bildschirm mit Countdown.
 
 Empfohlenes Format: **MP4, H.264 + AAC**, möglichst klein (720p reicht auf dem iPad):
@@ -141,6 +141,7 @@ Tipps:
 | `sprechen.keineSpracheAbbruchMs` | sagt jemand gar nichts, geht es nach dieser Zeit weiter |
 | `sprechen.lautstaerkeSchwelle` | ab welchem Pegel „Sprechen“ erkannt wird (passt sich zusätzlich ans Grundrauschen an) |
 | `mikrofonNurBeimSprechen` | `true`, falls auf iPhones der Videoton bei aktivem Mikrofon zu leise wird |
+| `standbild` | Ausschnitt für das runde Standbild während man spricht: `mitteX` (horizontale Mitte des Kopfes, 0–1), `obenY` (oberer Rand, 0–1), `groesse` (Anteil der Videohöhe) |
 | `ablauf` | Liste der Videos; `danachAufnehmen: true` = danach darf gesprochen werden |
 
 Für mehr Fragen einfach weitere Einträge in `ablauf` ergänzen. Den Knopf
