@@ -109,8 +109,8 @@ Fällt der Server während eines Anrufs aus, speichert die Seite auf dem Gerät
 
 ## Eigene Videos einsetzen
 
-Videos nach `public/videos/` legen und in `public/config.json` eintragen. Die
-mitgelieferte Datei `telefonzelle_2.mp4` dient vorerst als Platzhalter für alle vier Schritte. Fehlt eine Datei, zeigt die Seite einen
+Videos nach `public/videos/` legen und in `public/config.json` eintragen. Aktuell sind die
+vier Melo-Videos `01_melo.mp4` bis `04_melo.mp4` eingetragen. Fehlt eine Datei, zeigt die Seite einen
 Platzhalter-Bildschirm mit Countdown.
 
 Empfohlenes Format: **MP4, H.264 + AAC**, möglichst klein (720p reicht auf dem iPad):

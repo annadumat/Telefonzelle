@@ -24,13 +24,13 @@
   },
 
   "ablauf": [
-    { "video": "videos/telefonzelle_2.mp4", "danachAufnehmen": true,  "aufnahmeName": "01_antwort" },
-    { "video": "videos/telefonzelle_2.mp4", "danachAufnehmen": true,  "aufnahmeName": "02_antwort" },
-    { "video": "videos/telefonzelle_2.mp4", "danachAufnehmen": true,  "aufnahmeName": "03_antwort" },
-    { "video": "videos/telefonzelle_2.mp4", "danachAufnehmen": false }
+    { "video": "videos/01_melo.mp4", "danachAufnehmen": true,  "aufnahmeName": "01_antwort" },
+    { "video": "videos/02_melo.mp4", "danachAufnehmen": true,  "aufnahmeName": "02_antwort" },
+    { "video": "videos/03_melo.mp4", "danachAufnehmen": true,  "aufnahmeName": "03_antwort" },
+    { "video": "videos/04_melo.mp4", "danachAufnehmen": false }
   ],
 
-  "standbild": { "mitteX": 0.47, "obenY": 0.0, "groesse": 0.6 },
+  "standbild": { "mitteX": 0.515, "obenY": 0.0, "groesse": 0.6 },
 
   "endbildschirmSekunden": 5
 }
