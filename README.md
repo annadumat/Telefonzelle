@@ -134,7 +134,7 @@ Tipps:
 | `aufnahme` | `"audio"` (nur Ton) oder `"video"` (Kamera + Ton, mit Selbstansicht) |
 | `speichern` | `"auto"` (Server wenn vorhanden, sonst Gerät), `"geraet"` oder `"server"` |
 | `adminPin` | PIN für die Export-Seite (`""` = keine PIN) |
-| `klingelnSekunden` | wie lange es vor dem „Abnehmen“ klingelt |
+| `klingelnSekunden` | wie lange es vor dem „Abnehmen“ klingelt (alternativ `klingelnAnzahl` für eine feste Zahl an Klingeltönen) |
 | `platzhalterSekunden` | Dauer des Platzhalters, wenn ein Video fehlt |
 | `sprechen.stilleBeendetNachMs` | so lange Stille nach dem Sprechen → Aufnahme endet; `0` = aus, dann nur per Knopf „Fertig gesprochen“ |
 | `sprechen.maxDauerMs` | maximale Länge einer Antwort |

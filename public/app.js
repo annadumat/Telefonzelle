@@ -211,7 +211,11 @@
     // Klingeln
     show("ringing");
     call.ring = ringtone();
-    await wait((config.klingelnSekunden ?? 3) * 1000);
+    // Anzahl Klingeltöne (Ton 1 s, Pause 2 s); nach dem letzten Ton kurze Pause, dann "Abheben"
+    const ringMs = config.klingelnAnzahl
+      ? ((config.klingelnAnzahl - 1) * 3 + 1) * 1000 + 800
+      : (config.klingelnSekunden ?? 3) * 1000;
+    await wait(ringMs);
     call.ring.stop(); call.ring = null;
 
     // "Abgenommen"
