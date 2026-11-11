@@ -137,7 +137,7 @@ Tipps:
 | `klingelnSekunden` | wie lange es vor dem „Abnehmen“ klingelt (alternativ `klingelnAnzahl` für eine feste Zahl an Klingeltönen) |
 | `platzhalterSekunden` | Dauer des Platzhalters, wenn ein Video fehlt |
 | `sprechen.stilleBeendetNachMs` | so lange Stille nach dem Sprechen → Aufnahme endet; `0` = aus, dann nur per Knopf „Fertig gesprochen“ |
-| `sprechen.maxDauerMs` | maximale Länge einer Antwort |
+| `sprechen.maxDauerMs` | maximale Länge einer Antwort in ms; `0` = unbegrenzt |
 | `sprechen.keineSpracheAbbruchMs` | sagt jemand gar nichts, geht es nach dieser Zeit weiter |
 | `sprechen.lautstaerkeSchwelle` | ab welchem Pegel „Sprechen“ erkannt wird (passt sich zusätzlich ans Grundrauschen an) |
 | `mikrofonDauerhaftOffen` | `true`: Mikrofon bleibt nach dem ersten Erlauben offen, damit das iPad nicht bei jedem Anruf neu fragt (aufgenommen wird nur in den Sprechphasen) |

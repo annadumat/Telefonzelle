@@ -382,7 +382,7 @@
       // stilleBeendetNachMs = 0: kein automatisches Weiter nach Stille, nur per Knopf
       if (heard && cfg.stilleBeendetNachMs > 0 && now - lastLoud > cfg.stilleBeendetNachMs) stop("stille");
       else if (!heard && elapsed > cfg.keineSpracheAbbruchMs) stop("keine-sprache");
-      else if (elapsed > cfg.maxDauerMs) stop("max-dauer");
+      else if (cfg.maxDauerMs > 0 && elapsed > cfg.maxDauerMs) stop("max-dauer");   // 0 = keine Begrenzung
     }, 50);
 
     try {

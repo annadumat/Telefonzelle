@@ -18,7 +18,7 @@
 
   "sprechen": {
     "stilleBeendetNachMs": 0,
-    "maxDauerMs": 60000,
+    "maxDauerMs": 0,
     "keineSpracheAbbruchMs": 20000,
     "lautstaerkeSchwelle": 0.035
   },
