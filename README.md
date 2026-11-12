@@ -134,8 +134,8 @@ Tipps:
 | `aufnahme` | `"audio"` (nur Ton) oder `"video"` (Kamera + Ton, mit Selbstansicht) |
 | `speichern` | `"auto"` (Server wenn vorhanden, sonst Gerät), `"geraet"` oder `"server"` |
 | `adminPin` | PIN für die Export-Seite (`""` = keine PIN) |
-| `verbindungston` | `"rauschen"` (Funk-Rauschen beim Verbindungsaufbau) oder `"klingeln"` (klassisches Freizeichen) |
-| `verbindenSekunden` | Dauer des Rauschens, bevor Melo startet |
+| `verbindungston` | `"aus"` (still), `"rauschen"` (Funk-Rauschen) oder `"klingeln"` (Freizeichen) beim Verbindungsaufbau |
+| `verbindenSekunden` | Dauer des Verbindungsbildschirms, bevor Melo startet |
 | `klingelnSekunden` | wie lange es vor dem „Abnehmen“ klingelt (alternativ `klingelnAnzahl` für eine feste Zahl an Klingeltönen) |
 | `platzhalterSekunden` | Dauer des Platzhalters, wenn ein Video fehlt |
 | `sprechen.stilleBeendetNachMs` | so lange Stille nach dem Sprechen → Aufnahme endet; `0` = aus, dann nur per Knopf „Fertig gesprochen“ |

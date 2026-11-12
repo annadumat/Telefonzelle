@@ -241,3 +241,4 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 /* längerer Hinweistext im Sprechfeld: zentriert und gleichmäßig umbrechen */
 .talk-state { display: block; text-align: center; text-wrap: balance; line-height: 1.35; max-width: 520px; }
 .talk-state .rec-dot { display: inline-block; vertical-align: 0.05em; margin-right: 10px; }
+

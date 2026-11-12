@@ -149,14 +149,14 @@
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
     audioCtx.resume();
     const first = config.ablauf[0];
-    // Video im Klick einmal stumm starten und sofort anhalten: Das gibt es für späteres
-    // Abspielen mit Ton frei (iOS), ohne dass während des Klingelns etwas zu hören ist.
-    video.muted = true;
+    // Video im Klick MIT Ton starten und im selben Moment anhalten: iOS gibt damit späteres
+    // Abspielen mit Ton frei. (Ein stummer Start zählt für iOS nicht als Freigabe für Ton!)
+    // Weil sofort angehalten wird – nicht erst nach dem Laden –, ist nichts zu hören.
+    video.muted = false;
     video.src = first.video;
     const unlock = video.play();
     video.pause();
-    if (unlock) unlock.catch(() => {});
-    video.muted = false;
+    if (unlock) unlock.then(() => video.pause()).catch(() => {});
 
     call = {
       id: sessionId(),
@@ -212,9 +212,10 @@
     // Verbindungsaufbau: Rauschen ("Zeitverbindung") oder klassisches Freizeichen
     show("ringing");
     let ringMs;
-    if ((config.verbindungston || "rauschen") === "rauschen") {
+    const ton = config.verbindungston || "aus";
+    if (ton === "aus" || ton === "rauschen") {
       ringMs = (config.verbindenSekunden ?? 3) * 1000;
-      call.ring = noiseTone(ringMs / 1000);
+      call.ring = ton === "rauschen" ? noiseTone(ringMs / 1000) : { stop() {} };   // "aus" = Stille
     } else {
       call.ring = ringtone();
       // Anzahl Klingeltöne (Ton 1 s, Pause 2 s); nach dem letzten Ton kurze Pause, dann "Abheben"
@@ -263,8 +264,8 @@
       video.muted = false;
       const p = video.play();
       if (p) p.catch((e) => {
-        // Autoplay blockiert? Dann notfalls stumm abspielen statt hängen zu bleiben.
-        if (e.name === "NotAllowedError") { video.muted = true; video.play().catch(onErr); }
+        // Ton blockiert? Notfalls stumm weiterspielen, damit der Ablauf nicht hängen bleibt.
+        if (e.name === "NotAllowedError") { console.warn("Ton blockiert – spiele stumm"); video.muted = true; video.play().catch(onErr); }
         else if (e.name !== "AbortError") onErr();
       });
     }));
