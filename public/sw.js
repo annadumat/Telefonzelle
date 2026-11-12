@@ -3,7 +3,7 @@
  * - Videos: aus dem Cache (mit Range-Unterstützung, die Safari für Videos braucht)
  * - /api/…: nie cachen (nur relevant, wenn server.py benutzt wird)
  */
-const CACHE = "telefonzelle-v21";
+const CACHE = "telefonzelle-v22";
 const APP_FILES = [
   "./", "index.html", "version.js", "style.css", "app.js", "storage.js", "config.json", "avatar.svg",
   "admin.html", "admin.js", "manifest.webmanifest", "icon-512.png", "apple-touch-icon.png",

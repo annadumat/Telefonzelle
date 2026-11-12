@@ -345,7 +345,7 @@
     call.activeRecording = { stop, name };
 
     showListening(true);
-    label.textContent = "Du kannst jetzt sprechen …";
+    label.textContent = "Nimm dir Zeit, du kannst jetzt ganz in Ruhe deine Antwort formulieren!";
     talk.hidden = false;
     rec.start(1000);
     const t0 = performance.now();
