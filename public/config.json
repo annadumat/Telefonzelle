@@ -11,6 +11,8 @@
   "speichern": "auto",
   "adminPin": "2036",
 
+  "verbindungston": "rauschen",
+  "verbindenSekunden": 3,
   "klingelnSekunden": 5,
   "platzhalterSekunden": 5,
   "mikrofonNurBeimSprechen": false,

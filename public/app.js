@@ -209,13 +209,19 @@
 
   // ------------------------------------------------------------------ Ablauf
   async function runCall() {
-    // Klingeln
+    // Verbindungsaufbau: Rauschen ("Zeitverbindung") oder klassisches Freizeichen
     show("ringing");
-    call.ring = ringtone();
-    // Anzahl Klingeltöne (Ton 1 s, Pause 2 s); nach dem letzten Ton kurze Pause, dann "Abheben"
-    const ringMs = config.klingelnAnzahl
-      ? ((config.klingelnAnzahl - 1) * 3 + 1) * 1000 + 800
-      : (config.klingelnSekunden ?? 3) * 1000;
+    let ringMs;
+    if ((config.verbindungston || "rauschen") === "rauschen") {
+      ringMs = (config.verbindenSekunden ?? 3) * 1000;
+      call.ring = noiseTone(ringMs / 1000);
+    } else {
+      call.ring = ringtone();
+      // Anzahl Klingeltöne (Ton 1 s, Pause 2 s); nach dem letzten Ton kurze Pause, dann "Abheben"
+      ringMs = config.klingelnAnzahl
+        ? ((config.klingelnAnzahl - 1) * 3 + 1) * 1000 + 800
+        : (config.klingelnSekunden ?? 3) * 1000;
+    }
     await wait(ringMs);
     call.ring.stop(); call.ring = null;
 
@@ -528,6 +534,38 @@
   }
 
   // ------------------------------------------------------------------ Töne (offline erzeugt)
+  /** Rauschen wie bei einer Funkverbindung, die gesucht wird: weich ein, Frequenz-Sweep,
+   *  leichtes Schwanken und Knistern, am Ende ausblenden. Komplett offline erzeugt. */
+  function noiseTone(seconds) {
+    const ctx = audioCtx, t0 = ctx.currentTime, dur = Math.max(1, seconds);
+    // 2 s Rauschen als Schleife (leicht "rosa" gefiltert für einen weicheren Klang)
+    const len = ctx.sampleRate * 2, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+    let b0 = 0, b1 = 0, b2 = 0;
+    for (let i = 0; i < len; i++) {
+      const w = Math.random() * 2 - 1;
+      b0 = 0.99765 * b0 + w * 0.0990460; b1 = 0.96300 * b1 + w * 0.2965164; b2 = 0.57000 * b2 + w * 1.0526913;
+      d[i] = (b0 + b1 + b2 + w * 0.1848) * 0.2;
+      if (Math.random() < 0.00025) d[i] += (Math.random() - 0.5) * 1.6;   // Knistern
+    }
+    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+    const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 0.8;
+    bp.frequency.setValueAtTime(350, t0);
+    bp.frequency.exponentialRampToValueAtTime(2400, t0 + dur * 0.55);   // "Sender suchen"
+    bp.frequency.exponentialRampToValueAtTime(1100, t0 + dur);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(0.22, t0 + 0.35);
+    gain.gain.setValueAtTime(0.22, t0 + dur - 0.5);
+    gain.gain.linearRampToValueAtTime(0, t0 + dur);
+    // langsames Schwanken der Lautstärke
+    const lfo = ctx.createOscillator(), lfoGain = ctx.createGain();
+    lfo.frequency.value = 3.2; lfoGain.gain.value = 0.06;
+    lfo.connect(lfoGain); lfoGain.connect(gain.gain);
+    src.connect(bp); bp.connect(gain); gain.connect(ctx.destination);
+    src.start(t0); lfo.start(t0);
+    return { stop() { try { gain.gain.cancelScheduledValues(0); gain.gain.value = 0; src.stop(); lfo.stop(); gain.disconnect(); } catch (_) {} } };
+  }
+
   function ringtone() {
     const ctx = audioCtx;
     const gain = ctx.createGain(); gain.gain.value = 0; gain.connect(ctx.destination);
