@@ -264,8 +264,8 @@
       video.muted = false;
       const p = video.play();
       if (p) p.catch((e) => {
-        // Ton blockiert (iOS)? Nicht stumm weiterspielen, sondern um einen Tipp bitten.
-        if (e.name === "NotAllowedError") askForSound();
+        // Ton blockiert? Notfalls stumm weiterspielen, damit der Ablauf nicht hängen bleibt.
+        if (e.name === "NotAllowedError") { console.warn("Ton blockiert – spiele stumm"); video.muted = true; video.play().catch(onErr); }
         else if (e.name !== "AbortError") onErr();
       });
     }));
@@ -306,18 +306,6 @@
   function showListening(on) {
     $("listening").hidden = !on;
     video.style.opacity = on ? "0" : "1";
-  }
-
-  /** Sicherheitsnetz: Hat iOS den Ton blockiert, großen Knopf zeigen; ein Tipp startet das Video mit Ton. */
-  function askForSound() {
-    const b = $("sound-gate");
-    b.hidden = false;
-    b.onclick = () => {
-      b.hidden = true;
-      if (audioCtx) audioCtx.resume();
-      video.muted = false;
-      video.play().catch((e) => { console.warn("Abspielen weiterhin blockiert", e); b.hidden = false; });
-    };
   }
 
   // ------------------------------------------------------------------ Aufnahme
@@ -491,7 +479,6 @@
     video.pause();
     video.removeAttribute("src"); video.load();
     $("placeholder").hidden = true;
-    $("sound-gate").hidden = true;
     $("talk").hidden = true;
     // Mikrofon offen lassen, damit iOS beim nächsten Anruf nicht erneut um Erlaubnis fragt.
     // (Aufgenommen wird nur in den Sprechphasen.) Abschaltbar mit "mikrofonDauerhaftOffen": false.
