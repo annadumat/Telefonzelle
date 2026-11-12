@@ -29,9 +29,9 @@
     { "video": "videos/01_melo.mp4", "danachAufnehmen": true,  "aufnahmeName": "01_antwort",
       "frage": "Wie sieht deine ideale Welt im Jahr 2036 aus? Welche Technologien prägen den Alltag und wie verändern sie Unternehmen, Arbeit, Staat und Gesellschaft zum Positiven?" },
     { "video": "videos/02_melo.mp4", "danachAufnehmen": true,  "aufnahmeName": "02_antwort",
-      "frage": "Interessant! Und was bedeutet diese Zukunft für dich persönlich? Wie würde sich deine Arbeit, dein Job oder dein Unternehmen verändern?" },
+      "frage": "Was bedeutet diese Zukunft für dich persönlich? Wie würde sich deine Arbeit, dein Job oder dein Unternehmen verändern?" },
     { "video": "videos/03_melo.mp4", "danachAufnehmen": true,  "aufnahmeName": "03_antwort",
-      "frage": "Zum Abschluss: Wie wird deine Vision Wirklichkeit? Was muss sich dafür in Politik, Wirtschaft und Gesellschaft konkret verändern?" },
+      "frage": "Wie wird deine Vision Wirklichkeit? Was muss sich dafür in Politik, Wirtschaft und Gesellschaft konkret verändern?" },
     { "video": "videos/04_melo.mp4", "danachAufnehmen": false }
   ],
 
