@@ -10,7 +10,7 @@
   <title>Anruf in die Zukunft</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="style.css?v=24">
+  <link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
 
@@ -55,6 +55,12 @@
       <p id="listen-question" class="question" hidden></p>
     </div>
 
+    <!-- erscheint nur, falls iOS den Ton blockiert -->
+    <button id="sound-gate" class="sound-gate" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>
+      Tippe hier, um Melo zu hören
+    </button>
+
     <div id="placeholder" hidden>
       <div class="ph-box">
         <div class="ph-title">Platzhalter</div>
@@ -98,8 +104,8 @@
     </div>
   </section>
 
-  <script src="version.js?v=24"></script>
-  <script src="storage.js?v=24"></script>
-  <script src="app.js?v=24"></script>
+  <script src="version.js?v=25"></script>
+  <script src="storage.js?v=25"></script>
+  <script src="app.js?v=25"></script>
 </body>
 </html>
