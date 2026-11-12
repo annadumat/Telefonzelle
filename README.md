@@ -146,7 +146,7 @@ Tipps:
 | `mikrofonNurBeimSprechen` | `true`, falls auf iPhones der Videoton bei aktivem Mikrofon zu leise wird |
 | `standbildDatei` | festes Bild für das runde Standbild während man spricht (z. B. `melo.jpg`); leer lassen = automatisch aus dem Video |
 | `standbild` | Ausschnitt für das runde Standbild während man spricht: `mitteX` (horizontale Mitte des Kopfes, 0–1), `obenY` (oberer Rand, 0–1), `groesse` (Anteil der Videohöhe) |
-| `ablauf` | Liste der Videos; `danachAufnehmen: true` = danach darf gesprochen werden; `frage` = Text, der während der Aufnahme eingeblendet wird |
+| `ablauf` | Liste der Videos; `danachAufnehmen: true` = danach darf gesprochen werden; `frage` = Text, der während der Aufnahme eingeblendet wird (nach jedem „?“ beginnt automatisch ein neuer Absatz) |
 
 Für mehr Fragen einfach weitere Einträge in `ablauf` ergänzen. Den Knopf
 **„Fertig gesprochen“** gibt es immer zusätzlich.

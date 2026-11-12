@@ -320,7 +320,10 @@
   async function recordAnswer(name, entry, frage) {
     // Frage einblenden, die gerade beantwortet werden soll
     const q = $("listen-question");
-    q.textContent = frage || "";
+    // Mehrere Fragen (nach jedem "?") als eigene Absätze mit kleinem Abstand anzeigen
+    q.replaceChildren();
+    const teile = Array.isArray(frage) ? frage : (String(frage || "").match(/[^?]+\?|[^?]+$/g) || []).map((t) => t.trim());
+    teile.filter(Boolean).forEach((t) => { const s = document.createElement("span"); s.className = "q-part"; s.textContent = t; q.appendChild(s); });
     q.hidden = !frage;
     $("listening").classList.toggle("has-question", !!frage);
     const s = await guard(getStream());
